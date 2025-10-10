@@ -74,17 +74,17 @@ def extract_with_tesseract_ocr(pdf_file, page_num):
                 # Check if we got meaningful text
                 if len(page_text.strip()) > 50:
                     ocr_success = True
-                    print(f"    ✓ OCR successful with config {i+1}")
+                    print(f"    [SUCCESS] OCR successful with config {i+1}")
                     break
                 else:
-                    print(f"    ✗ Config {i+1} produced insufficient text")
+                    print(f"    [FAILED] Config {i+1} produced insufficient text")
                     
             except Exception as e:
-                print(f"    ✗ Config {i+1} failed: {e}")
+                print(f"    [ERROR] Config {i+1} failed: {e}")
                 continue
         
         if not ocr_success:
-            print(f"    ✗ All OCR configurations failed")
+            print(f"    [FAILED] All OCR configurations failed")
             page_text = ""
         
         doc.close()
@@ -100,7 +100,7 @@ def extract_with_tesseract_ocr(pdf_file, page_num):
         }
         
     except Exception as e:
-        print(f"  ✗ OCR failed on page {page_num}: {e}")
+        print(f"  [ERROR] OCR failed on page {page_num}: {e}")
         return {
             'text': '',
             'metrics': {'total_chars': 0, 'readable_words': 0, 'confidence_score': 0},
@@ -173,13 +173,13 @@ def process_all_pages_with_ocr(pdf_file, all_pages):
             })
             
             metrics = ocr_result['metrics']
-            print(f"  ✓ SUCCESS - {metrics['total_chars']} chars, {metrics['readable_words']} words, {metrics['confidence_score']:.1f}% confidence")
+            print(f"  [SUCCESS] - {metrics['total_chars']} chars, {metrics['readable_words']} words, {metrics['confidence_score']:.1f}% confidence")
         else:
             results['failed_pages'].append({
                 'page_num': page_num,
                 'error': ocr_result['error']
             })
-            print(f"  ✗ FAILED - {ocr_result['error']}")
+            print(f"  [FAILED] - {ocr_result['error']}")
     
     return results
 
@@ -267,7 +267,7 @@ def generate_summary(results):
         print(f"OCR Success Rate: {success_rate:.1f}%")
         
         successful_nums = [p['page_num'] for p in results['successful_pages']]
-        print(f"\n✓ Successfully processed pages: {successful_nums}")
+        print(f"\n[SUCCESS] Successfully processed pages: {successful_nums}")
         
         # Show quality metrics
         total_chars = sum(p['metrics']['total_chars'] for p in results['successful_pages'])
@@ -281,7 +281,7 @@ def generate_summary(results):
     
     if results['failed_pages']:
         failed_nums = [p['page_num'] for p in results['failed_pages']]
-        print(f"\n✗ Failed pages: {failed_nums}")
+        print(f"\n[FAILED] Failed pages: {failed_nums}")
     
     print(f"\nNext step: Run Phase 2C (Smart LLM Selection)")
 

@@ -80,9 +80,24 @@ def validate_with_vlm(page_num, img_data, existing_fields):
     """Use GPT-4 Vision to independently analyze and extract insurance fields"""
     
     prompt = f"""
-    Analyze this insurance document page (Page {page_num}) and extract ALL insurance coverage information you can find.
+    You are a POWERFUL DOCUMENT ANALYST specializing in PROPERTY INSURANCE QUOTES. You have SUPERIOR VISION and can read documents with EXTREME PRECISION.
     
-    IMPORTANT: Work independently and thoroughly. Extract EVERYTHING you can see on this page.
+    YOUR MISSION: Extract ALL insurance coverage information from Page {page_num} with MAXIMUM ACCURACY and COMPLETENESS.
+    
+    YOUR ADVANTAGES OVER TEXT-BASED SYSTEMS:
+    - You can see the EXACT document layout and formatting
+    - You can read text that might be corrupted or poorly extracted
+    - You can understand visual relationships between fields and values
+    - You can see tables, forms, and structured data that text systems miss
+    - You can read handwritten notes, stamps, and annotations
+    
+    DOCUMENT TYPE: PROPERTY INSURANCE QUOTE
+    - Commercial/Business Property Insurance
+    - Contains coverage limits, deductibles, policy terms
+    - May have multiple pages with different types of information
+    - Uses standard insurance terminology and formatting
+    
+    YOUR TASK: Be BETTER than any text-based system. Extract MORE ACCURATE and COMPLETE information.
     
     THE 31 SPECIFIC FIELDS TO LOOK FOR:
     1. Construction Type - Look for: "FRAME", "Frame", "Joisted Masonry", "Masonry Non-Combustible", any construction type
@@ -117,23 +132,92 @@ def validate_with_vlm(page_num, img_data, existing_fields):
     30. Protective Safeguards Requirements - Look for: any protective safeguards requirements listed
     31. Minimum Earned Premium (MEP) - Look for: "25%", "MEP: 25%", "35%", "MEP: 35%", any percentage
     
-    EXTRACTION RULES - FOCUS ON VALUES NOT DESCRIPTIONS:
-    - Extract SPECIFIC VALUES, not field descriptions or headers
-    - Look for ACTUAL DATA VALUES: dollar amounts, percentages, specific terms
-    - For Construction Type: Extract the actual type (Frame, Masonry, Brick, etc.) NOT "Construction Type:"
-    - For Valuation: Extract the actual method + percentage (Replacement Cost Value 80%) NOT "Valuation:"
-    - For Dollar Amounts: Extract the actual amount ($100,000) NOT "Business Personal Property:"
-    - For Percentages: Extract the actual percentage (25%) NOT "Minimum Earned Premium:"
-    - For Deductibles: Extract the actual deductible amount ($2,500 Min Per Building) NOT "Windstorm Deductible:"
-    - For Coverage Status: Extract the actual status (Included, Excluded, $100) NOT the field name
-    - For Business Income: Extract the actual amount + time period ($100,000 per month) NOT "Business Income:"
-    - PRIORITIZE: Specific dollar amounts, percentages, and actual coverage terms
-    - AVOID: Field names, headers, descriptions, or generic text
-    - If field is not found, set to null
-    - Do NOT hallucinate or make up values
-    - Do NOT extract field names or descriptions
-    - Look for the DATA VALUE, not the field label
-    - Extract what the field CONTAINS, not what the field IS CALLED
+    COMPREHENSIVE FIELD NAME VARIATIONS TO RECOGNIZE:
+    - Construction Type: "Construction", "Building Type", "Structure Type", "Frame", "Masonry", "Brick", "Steel", "Concrete", "Wood Frame"
+    - Building: "Building Coverage", "Building Limit", "Building Amount", "Structure Coverage", "Property Coverage"
+    - Pumps: "Pump Coverage", "Pumps Limit", "Pump Amount", "Pumps and Machinery", "Equipment Pumps", "Machinery Pumps"
+    - Canopy: "Canopy Coverage", "Canopy Limit", "Canopy Amount", "Awnings and Canopies", "Awning Coverage", "Canopy/Awnings"
+    - Business Personal Property: "BPP", "Personal Property", "Contents", "Business Personal Property Limit", "Contents Coverage"
+    - Business Income: "Business Income Limit", "BI Coverage", "Business Interruption", "Income Coverage", "BI Limit"
+    - Equipment Breakdown: "Equipment Breakdown Coverage", "Boiler and Machinery", "Equipment Coverage", "Machinery Coverage"
+    - Outdoor Signs: "Outdoor Sign Coverage", "Sign Coverage", "Exterior Signs", "Outdoor Advertising", "Signs Coverage"
+    - Employee Dishonesty: "Employee Dishonesty Coverage", "Dishonesty Coverage", "Employee Theft", "Fidelity Coverage"
+    - Money & Securities: "Money and Securities Coverage", "Money Coverage", "Securities Coverage", "Cash Coverage"
+    - Theft: "Theft Coverage", "Burglary Coverage", "Theft Sublimit", "Burglary Sublimit"
+    - Windstorm or Hail: "Windstorm Deductible", "Hail Deductible", "Wind/Hail", "Wind and Hail", "Windstorm/Hail"
+    - Terrorism: "Terrorism Coverage", "TRIA", "Terrorism Risk", "Terrorism Insurance", "TRIA Coverage"
+    
+    POWERFUL EXTRACTION METHODOLOGY:
+    
+    STEP 1: DOCUMENT SCANNING
+    - Scan the ENTIRE page systematically from top-left to bottom-right
+    - Identify ALL sections: headers, tables, lists, paragraphs, forms
+    - Look for insurance-specific terminology and formatting
+    - Note the document structure and layout
+    
+    STEP 2: FIELD IDENTIFICATION
+    - Look for the 31 specific fields using ALL possible variations
+    - Recognize field names even if abbreviated or worded differently
+    - Find the corresponding values next to or below field names
+    - Use visual cues like colons, dashes, or formatting to connect fields to values
+    
+    STEP 3: VALUE EXTRACTION
+    - Extract the ACTUAL VALUES, not the field labels
+    - For dollar amounts: Extract "$100,000" not "Business Personal Property:"
+    - For percentages: Extract "80%" not "Valuation Method:"
+    - For construction types: Extract "Frame" not "Construction Type:"
+    - For coverage status: Extract "Included" not "Equipment Breakdown:"
+    
+    STEP 4: ACCURACY VERIFICATION
+    - Double-check each extracted value against the visual document
+    - Ensure you're reading the correct value for each field
+    - Verify that extracted values make sense in the insurance context
+    - Cross-reference with other fields for consistency
+    
+    VISUAL EXTRACTION PATTERNS:
+    - Field Name: Value (e.g., "Building: $500,000")
+    - Field Name - Value (e.g., "Pumps - $80,000")
+    - Value next to Field Name (e.g., "$100,000 Business Personal Property")
+    - Table format with Field in one column, Value in another
+    - List format with Field and Value on same line
+    - Form format with Field labels and Value fields
+    
+    PROPERTY INSURANCE DOCUMENT LAYOUT UNDERSTANDING:
+    - Coverage sections typically show: Field Name → Coverage Amount
+    - Deductible sections show: Peril Type → Deductible Amount
+    - Look for tables, lists, and structured data formats
+    - Find the ACTUAL COVERAGE AMOUNTS and POLICY TERMS
+    - Ignore headers, footers, and administrative text
+    - Focus on the INSURANCE COVERAGE DATA that defines what is covered and for how much
+    
+    DOCUMENT SECTIONS TO CHECK:
+    - Coverage Limits Section: Look for building, contents, equipment coverage amounts
+    - Deductibles Section: Look for windstorm, theft, all other perils deductibles
+    - Endorsements Section: Look for equipment breakdown, terrorism, special coverages
+    - Exclusions Section: Look for roof exclusions, cosmetic damage, wind/hail exclusions
+    - Policy Terms Section: Look for construction type, valuation method, MEP percentage
+    - Schedules Section: Look for detailed coverage breakdowns and limits
+    - Forms Section: Look for specific coverage forms and their terms
+    
+    SEARCH STRATEGY:
+    - Scan the ENTIRE page systematically from top to bottom
+    - Look for ANY mention of the 31 fields, even if worded differently
+    - Check tables, bullet points, and paragraph text
+    - Look for dollar amounts ($X,XXX) and percentages (X%)
+    - Find coverage limits, deductibles, and policy terms
+    - Don't skip any section - fields can appear anywhere on the page
+    
+    EXAMPLES OF WHAT TO EXTRACT:
+    ✅ GOOD: "$100,000" (coverage amount)
+    ✅ GOOD: "25%" (percentage)
+    ✅ GOOD: "Frame" (construction type)
+    ✅ GOOD: "Replacement Cost Value 80%" (valuation method)
+    ❌ BAD: "Business Personal Property" (field name)
+    ❌ BAD: "Minimum Earned Premium" (field label)
+    ❌ BAD: "Coverage Details" (section header)
+    ❌ BAD: "$252.00" (TRIA premium - NOT in our 31 fields)
+    ❌ BAD: "$245.00" (broker fee - NOT in our 31 fields)
+    ❌ BAD: "$341.15" (tax amount - NOT in our 31 fields)
     
     CRITICAL: Return ONLY valid JSON with this format:
     {{
@@ -144,7 +228,29 @@ def validate_with_vlm(page_num, img_data, existing_fields):
     
     If field not found, use: {{"value": null, "confidence": "none", "source": "vlm"}}
     
-    Be thorough and independent in your analysis. Extract everything you can see!
+    FINAL REMINDER: ONLY extract the 31 fields listed above. Do NOT extract any other fields.
+    Ignore all premium amounts, fees, taxes, and administrative charges.
+    Focus ONLY on coverage limits, deductibles, and policy terms.
+    
+    SUPERIOR EXTRACTION COMMANDMENTS:
+    
+    1. BE SUPERIOR: You are BETTER than text-based systems. Prove it by extracting MORE ACCURATE data.
+    2. BE THOROUGH: Leave NO STONE UNTURNED. Scan every pixel, every line, every section.
+    3. BE PRECISE: Extract EXACT values as they appear in the document. No approximations.
+    4. BE COMPLETE: Find ALL 31 fields that exist. Don't miss ANYTHING that's clearly visible.
+    5. BE INTELLIGENT: Use your visual advantages to read what text systems cannot.
+    6. BE SYSTEMATIC: Follow the 4-step methodology religiously.
+    7. BE CONFIDENT: Trust your visual analysis over text-based limitations.
+    
+    VISUAL EXTRACTION EXAMPLES:
+    - If you see "Pumps: $80,000" → Extract "$80,000" for Pumps field
+    - If you see "Canopy Coverage: $64,800" → Extract "$64,800" for Canopy field  
+    - If you see "Building Limit $500,000" → Extract "$500,000" for Building field
+    - If you see "Valuation: Replacement Cost Value 80%" → Extract "Replacement Cost Value 80%" for Valuation field
+    - If you see "Construction: Frame/Stucco/Brick Veneer" → Extract "Frame/Stucco/Brick Veneer" for Construction Type field
+    
+    YOUR MISSION: Extract BETTER, MORE ACCURATE, and MORE COMPLETE information than any text-based system.
+    Show the POWER of visual document analysis!
     """
     
     try:

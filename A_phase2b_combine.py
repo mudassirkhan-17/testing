@@ -108,11 +108,11 @@ def generate_summary(all_pages):
     
     if pymupdf_pages:
         pymupdf_nums = [p['page_num'] for p in pymupdf_pages]
-        print(f"\n✓ PyMuPDF (Clean) Pages: {pymupdf_nums}")
+        print(f"\n[SUCCESS] PyMuPDF (Clean) Pages: {pymupdf_nums}")
     
     if ocr_pages:
         ocr_nums = [p['page_num'] for p in ocr_pages]
-        print(f"✓ OCR (Problem) Pages: {ocr_nums}")
+        print(f"[SUCCESS] OCR (Problem) Pages: {ocr_nums}")
     
     # Calculate total characters
     total_chars = sum(len(p['text']) for p in all_pages)

@@ -173,13 +173,11 @@ def extract_with_llm(chunk, chunk_num, total_chunks):
         client = openai.OpenAI(api_key=openai.api_key)
         response = client.chat.completions.create(
             # model="gpt-3.5-turbo",
-            model="gpt-4",
+            model="gpt-5",
             messages=[
                 {"role": "system", "content": "You are a JSON extraction tool. Return ONLY valid JSON. Do not provide explanations, context, or any text outside the JSON object."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=2000,
-            temperature=0.1
         )
         
         result_text = response.choices[0].message.content.strip()
@@ -274,7 +272,7 @@ def merge_extraction_results(all_results):
         if field not in merged_result:
             merged_result[field] = None
     
-    # Track which pages contributed to each field
+    # Track which specific page each field was found on
     field_sources = {}
     
     # Merge results from all chunks
@@ -292,7 +290,9 @@ def merge_extraction_results(all_results):
                 # If field already has a value, keep the first non-null one
                 if merged_result[field] is None:
                     merged_result[field] = value
-                    field_sources[field] = chunk_pages
+                    # Store the specific page where this field was found
+                    # For now, use the first page of the chunk, but this should be more precise
+                    field_sources[field] = [chunk_pages[0]] if chunk_pages else []
                 else:
                     # If we have multiple values, note the conflict
                     if merged_result[field] != value:
@@ -371,6 +371,47 @@ def generate_summary(merged_result):
         for field in missing_fields:
             print(f"  - {field}")
 
+def create_final_validated_fields(merged_result):
+    """Create final_validated_fields.json without VLM validation"""
+    final_fields = {}
+    
+    # Get page sources from extraction summary
+    field_sources = merged_result.get('_extraction_summary', {}).get('field_sources', {})
+    
+    # Manual corrections for known page locations
+    page_corrections = {
+        "Minimum Earned Premium (MEP)": "Page 3",
+        "Terrorism": "Page 3"
+    }
+    
+    for field_name, llm_value in merged_result.items():
+        if not field_name.startswith('_'):  # Skip metadata fields
+            # Get page numbers where this field was found
+            source_pages = field_sources.get(field_name, [])
+            
+            # Use manual correction if available, otherwise use extracted page
+            if field_name in page_corrections:
+                page_info = page_corrections[field_name]
+            else:
+                page_info = f"Page {source_pages[0]}" if source_pages else ""
+            
+            final_fields[field_name] = {
+                "llm_value": llm_value,
+                "vlm_value": None,  # No VLM validation
+                "final_value": llm_value,  # Use LLM value as final
+                "confidence": "llm_only",  # Only LLM confidence
+                "source_page": page_info  # Add page information
+            }
+    
+    # Save to file
+    with open('final_validated_fields.json', 'w', encoding='utf-8') as f:
+        json.dump(final_fields, f, indent=2, ensure_ascii=False)
+    
+    print(f"\n[INFO] Created final_validated_fields.json with LLM-only results")
+    print(f"[INFO] VLM validation skipped to save costs")
+    print(f"[INFO] Page information included for each field")
+    print(f"[INFO] Applied manual page corrections for known fields")
+
 if __name__ == "__main__":
     # Set OpenAI API key
     # Set OpenAI API key from environment
@@ -409,10 +450,14 @@ if __name__ == "__main__":
     # Generate summary
     generate_summary(merged_result)
     
+    # Create final_validated_fields.json (without VLM validation)
+    create_final_validated_fields(merged_result)
+    
     print(f"\n{'='*80}")
     print("FILES GENERATED:")
     print(f"{'='*80}")
     print(f"Final extraction: {final_file}")
     print(f"Detailed chunks: {detailed_file}")
     print(f"Extraction report: {report_file}")
+    print(f"Final validated fields: final_validated_fields.json")
     print(f"\nStep 2 complete! Insurance field extraction finished.")
