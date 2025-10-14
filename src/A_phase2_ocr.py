@@ -10,7 +10,7 @@ import io
 def get_all_pages_from_phase1():
     """Get all pages from Phase 1 results for OCR processing"""
     # Read the all pages report to get total page count
-    report_file = "phase1_report.txt"
+    report_file = "results/phase1_report.txt"
     
     if not os.path.exists(report_file):
         print("Error: No Phase 1 report found!")
@@ -186,7 +186,7 @@ def process_all_pages_with_ocr(pdf_file, all_pages):
 def save_ocr_results(results):
     """Save OCR results to files"""
     # Save all OCR results in ONE single file
-    ocr_file = "ocr_all_pages_results.txt"  # Single file for all pages
+    ocr_file = "results/ocr_all_pages_results.txt"  # Single file for all pages
     
     with open(ocr_file, 'w', encoding='utf-8') as f:
         f.write("OCR EXTRACTION RESULTS - ALL PAGES\n")
@@ -213,7 +213,7 @@ def save_ocr_results(results):
     ocr_files = [ocr_file]
     
     # Save processing log
-    log_file = f"ocr_processing_log.txt"  # Fixed filename - overwrites existing
+    log_file = f"results/ocr_processing_log.txt"  # Fixed filename - overwrites existing
     with open(log_file, 'w', encoding='utf-8') as f:
         f.write("OCR PROCESSING LOG - PHASE 2 (ALL PAGES)\n")
         f.write("=" * 80 + "\n")

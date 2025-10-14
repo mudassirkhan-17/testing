@@ -1,0 +1,188 @@
+{
+  "Construction Type": {
+    "llm_value": "Masonry Non-Combustible",
+    "vlm_value": "Masonry Non-Combustible",
+    "final_value": "Masonry Non-Combustible",
+    "confidence": "llm+vlm_high"
+  },
+  "Valuation and Coinsurance": {
+    "llm_value": "Replacement Cost Value 80%",
+    "vlm_value": "Actual Cash Value Defined",
+    "final_value": "Actual Cash Value Defined",
+    "confidence": "llm+vlm_high"
+  },
+  "Cosmetic Damage": {
+    "llm_value": "Included",
+    "vlm_value": "Exclusion - Cosmetic Damage - Limitations on Coverage for Roof Surfacing",
+    "final_value": "Exclusion - Cosmetic Damage - Limitations on Coverage for Roof Surfacing",
+    "confidence": "llm+vlm_high"
+  },
+  "Building": {
+    "llm_value": null,
+    "vlm_value": null,
+    "final_value": null,
+    "confidence": "llm_only"
+  },
+  "Pumps": {
+    "llm_value": null,
+    "vlm_value": null,
+    "final_value": null,
+    "confidence": "llm_only"
+  },
+  "Canopy": {
+    "llm_value": null,
+    "vlm_value": null,
+    "final_value": null,
+    "confidence": "llm_only"
+  },
+  "ROOF EXCLUSION": {
+    "llm_value": "Included",
+    "vlm_value": "Exclusion - Cosmetic Damage - Limitations on Coverage for Roof Surfacing",
+    "final_value": "Exclusion - Cosmetic Damage - Limitations on Coverage for Roof Surfacing",
+    "confidence": "llm+vlm_high"
+  },
+  "Roof Surfacing": {
+    "llm_value": "ACV only applies to roofs that are more than 15 years old",
+    "vlm_value": "Limitations on Coverage for Roof Surfacing - ACV",
+    "final_value": "Limitations on Coverage for Roof Surfacing - ACV",
+    "confidence": "llm+vlm_high"
+  },
+  "Roof Surfacing -Limitation": {
+    "llm_value": "ACV only applies to roofs that are more than 15 years old",
+    "vlm_value": "Limitations on Coverage for Roof Surfacing - ACV",
+    "final_value": "Limitations on Coverage for Roof Surfacing - ACV",
+    "confidence": "llm+vlm_high"
+  },
+  "Business Personal Property": {
+    "llm_value": "$100,000",
+    "vlm_value": "$100,000",
+    "final_value": "$100,000",
+    "confidence": "llm+vlm_high"
+  },
+  "Business Income": {
+    "llm_value": "$100,000",
+    "vlm_value": null,
+    "final_value": "$100,000",
+    "confidence": "llm_only"
+  },
+  "Business Income with Extra Expense": {
+    "llm_value": "$100,000",
+    "vlm_value": "$100,000",
+    "final_value": "$100,000",
+    "confidence": "llm+vlm_high"
+  },
+  "Equipment Breakdown": {
+    "llm_value": "Included",
+    "vlm_value": "Equipment Breakdown Coverage Endorsement",
+    "final_value": "Equipment Breakdown Coverage Endorsement",
+    "confidence": "llm+vlm_high"
+  },
+  "Outdoor Signs": {
+    "llm_value": null,
+    "vlm_value": null,
+    "final_value": null,
+    "confidence": "llm_only"
+  },
+  "Signs Within 1,000 Feet to Premises": {
+    "llm_value": null,
+    "vlm_value": null,
+    "final_value": null,
+    "confidence": "llm_only"
+  },
+  "Employee Dishonesty": {
+    "llm_value": null,
+    "vlm_value": null,
+    "final_value": null,
+    "confidence": "llm_only"
+  },
+  "Money & Securities": {
+    "llm_value": null,
+    "vlm_value": null,
+    "final_value": null,
+    "confidence": "llm_only"
+  },
+  "Money and Securities (Inside; Outside)": {
+    "llm_value": null,
+    "vlm_value": null,
+    "final_value": null,
+    "confidence": "llm_only"
+  },
+  "Spoilage": {
+    "llm_value": null,
+    "vlm_value": null,
+    "final_value": null,
+    "confidence": "llm_only"
+  },
+  "Theft": {
+    "llm_value": null,
+    "vlm_value": "Theft Limitation",
+    "final_value": "Theft Limitation",
+    "confidence": "llm+vlm_high"
+  },
+  "Theft Sublimit": {
+    "llm_value": "$10,000",
+    "vlm_value": "$10,000",
+    "final_value": "$10,000",
+    "confidence": "llm+vlm_high"
+  },
+  "Theft Deductible": {
+    "llm_value": "$1,000",
+    "vlm_value": "$1,000",
+    "final_value": "$1,000",
+    "confidence": "llm+vlm_high"
+  },
+  "Windstorm or Hail": {
+    "llm_value": "$2500 Min Per Building",
+    "vlm_value": "Windstorm or Hail Deductible",
+    "final_value": "Windstorm or Hail Deductible",
+    "confidence": "llm+vlm_high"
+  },
+  "Named Storm Deductible": {
+    "llm_value": null,
+    "vlm_value": null,
+    "final_value": null,
+    "confidence": "llm_only"
+  },
+  "Wind and Hail and Named Storm exclusion": {
+    "llm_value": null,
+    "vlm_value": "Windstorm or Hail Loss Conditions",
+    "final_value": "Windstorm or Hail Loss Conditions",
+    "confidence": "llm+vlm_high"
+  },
+  "All Other Perils Deductible": {
+    "llm_value": "$1,000",
+    "vlm_value": "$1,000",
+    "final_value": "$1,000",
+    "confidence": "llm+vlm_high"
+  },
+  "Fire Station Alarm": {
+    "llm_value": null,
+    "vlm_value": null,
+    "final_value": null,
+    "confidence": "llm_only"
+  },
+  "Burglar Alarm": {
+    "llm_value": null,
+    "vlm_value": "Active Central Station Burglar Alarm",
+    "final_value": "Active Central Station Burglar Alarm",
+    "confidence": "llm+vlm_high"
+  },
+  "Terrorism": {
+    "llm_value": "APPLIES",
+    "vlm_value": "Included",
+    "final_value": "Included",
+    "confidence": "llm+vlm_high"
+  },
+  "Protective Safeguards Requirements": {
+    "llm_value": null,
+    "vlm_value": null,
+    "final_value": null,
+    "confidence": "llm_only"
+  },
+  "Minimum Earned Premium (MEP)": {
+    "llm_value": "25%",
+    "vlm_value": "25%",
+    "final_value": "25%",
+    "confidence": "llm+vlm_high"
+  }
+}

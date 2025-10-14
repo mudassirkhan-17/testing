@@ -33,16 +33,13 @@ def create_csv_export(fields_data):
             writer = csv.writer(csvfile)
             
             # Header row
-            writer.writerow(["Field Name", "LLM Value", "VLM Value", "Final Value", "Confidence", "Source Page"])
+            writer.writerow(["Field Name", "LLM Value", "Source Page"])
             
             # Data rows
             for field_name, field_data in fields_data.items():
                 row = [
                     field_name,
                     format_field_value(field_data.get('llm_value')),
-                    format_field_value(field_data.get('vlm_value')),
-                    format_field_value(field_data.get('final_value')),
-                    field_data.get('confidence', 'unknown'),
                     field_data.get('source_page', '')
                 ]
                 writer.writerow(row)
@@ -81,9 +78,6 @@ def create_formatted_text_export(fields_data):
             for field_name, field_data in fields_data.items():
                 f.write(f"\nField: {field_name}\n")
                 f.write(f"  LLM Value: {format_field_value(field_data.get('llm_value'))}\n")
-                f.write(f"  VLM Value: {format_field_value(field_data.get('vlm_value'))}\n")
-                f.write(f"  Final Value: {format_field_value(field_data.get('final_value'))}\n")
-                f.write(f"  Confidence: {field_data.get('confidence', 'unknown')}\n")
                 f.write(f"  Source Page: {field_data.get('source_page', '')}\n")
         
         print(f"[SUCCESS] Formatted text export created: insurance_fields_formatted.txt")
@@ -100,11 +94,11 @@ def create_simple_table_export(fields_data):
             f.write("=" * 80 + "\n\n")
             
             # Header
-            f.write("Field Name\tLLM Value\tVLM Value\tFinal Value\tConfidence\tSource Page\n")
+            f.write("Field Name\tLLM Value\tSource Page\n")
             
             # Data rows (tab-separated for easy copy-paste)
             for field_name, field_data in fields_data.items():
-                row = f"{field_name}\t{format_field_value(field_data.get('llm_value'))}\t{format_field_value(field_data.get('vlm_value'))}\t{format_field_value(field_data.get('final_value'))}\t{field_data.get('confidence', 'unknown')}\t{field_data.get('source_page', '')}\n"
+                row = f"{field_name}\t{format_field_value(field_data.get('llm_value'))}\t{field_data.get('source_page', '')}\n"
                 f.write(row)
         
         print(f"[SUCCESS] Table format created: insurance_fields_table.txt")

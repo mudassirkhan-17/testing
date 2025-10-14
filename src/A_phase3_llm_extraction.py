@@ -6,11 +6,11 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 # Load environment variables
-load_dotenv()
+load_dotenv('config/.env')
 
 def read_combined_file():
     """Read the intelligent combined file from Phase 2D"""
-    combined_file = "intelligent_combined_all_pages.txt"
+    combined_file = "results/intelligent_combined_all_pages.txt"
     
     if not os.path.exists(combined_file):
         print("Error: Intelligent combined file not found!")
@@ -169,18 +169,20 @@ def extract_with_llm(chunk, chunk_num, total_chunks):
     try:
         print(f"  Processing chunk {chunk_num} with LLM (Pages {chunk['page_nums']})...")
         
-        # Use OpenAI API (new format)
+        # Use OpenAI API (GPT-5 Responses API format)
         client = openai.OpenAI(api_key=openai.api_key)
-        response = client.chat.completions.create(
-            # model="gpt-3.5-turbo",
+        response = client.responses.create(
             model="gpt-5",
-            messages=[
-                {"role": "system", "content": "You are a JSON extraction tool. Return ONLY valid JSON. Do not provide explanations, context, or any text outside the JSON object."},
-                {"role": "user", "content": prompt}
-            ],
+            input=prompt,
+            reasoning={
+                "effort": "low"
+            },
+            text={
+                "verbosity": "low"
+            }
         )
         
-        result_text = response.choices[0].message.content.strip()
+        result_text = response.output_text.strip()
         
         # Check if response is empty
         if not result_text:
@@ -310,17 +312,17 @@ def merge_extraction_results(all_results):
 def save_extraction_results(merged_result, all_chunk_results):
     """Save extraction results to files"""
     # Save final merged results (overwrite existing)
-    final_file = "extracted_insurance_fields.json"
+    final_file = "results/extracted_insurance_fields.json"
     with open(final_file, 'w', encoding='utf-8') as f:
         json.dump(merged_result, f, indent=2, ensure_ascii=False)
     
     # Save detailed chunk results (overwrite existing)
-    detailed_file = "extraction_chunks.json"
+    detailed_file = "results/extraction_chunks.json"
     with open(detailed_file, 'w', encoding='utf-8') as f:
         json.dump(all_chunk_results, f, indent=2, ensure_ascii=False)
     
     # Save summary report (overwrite existing)
-    report_file = "extraction_report.txt"
+    report_file = "results/extraction_report.txt"
     with open(report_file, 'w', encoding='utf-8') as f:
         f.write("INSURANCE FIELD EXTRACTION REPORT - STEP 2\n")
         f.write("=" * 80 + "\n")
@@ -404,22 +406,30 @@ def create_final_validated_fields(merged_result):
             }
     
     # Save to file
-    with open('final_validated_fields.json', 'w', encoding='utf-8') as f:
+    with open('results/final_validated_fields.json', 'w', encoding='utf-8') as f:
+        json.dump(final_fields, f, indent=2, ensure_ascii=False)
+    
+    # Also save PDF-specific results
+    pdf_file = "pdf/PROPERTY QUOTE.pdf"  # Default, will be updated by master workflow
+    pdf_name = os.path.basename(pdf_file).replace('.pdf', '')
+    pdf_specific_file = f'results/{pdf_name}_extracted_insurance_fields.json'
+    
+    with open(pdf_specific_file, 'w', encoding='utf-8') as f:
         json.dump(final_fields, f, indent=2, ensure_ascii=False)
     
     print(f"\n[INFO] Created final_validated_fields.json with LLM-only results")
+    print(f"[INFO] Created {pdf_specific_file} for individual PDF results")
     print(f"[INFO] VLM validation skipped to save costs")
     print(f"[INFO] Page information included for each field")
     print(f"[INFO] Applied manual page corrections for known fields")
 
 if __name__ == "__main__":
-    # Set OpenAI API key
-    # Set OpenAI API key from environment
+    # Load API key from environment
     openai.api_key = os.getenv('OPENAI_API_KEY')
     
     if not openai.api_key:
         print("Error: OPENAI_API_KEY not found in environment variables!")
-        print("Please set your OpenAI API key in the .env file")
+        print("Please set your API key in the .env file")
         exit(1)
     
     print("STEP 2: LLM INFORMATION EXTRACTION")

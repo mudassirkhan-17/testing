@@ -127,7 +127,7 @@ def save_results(results):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
     # Save clean pages results
-    clean_file = f"clean_pages_results.txt"  # Fixed filename - overwrites existing
+    clean_file = f"results/clean_pages_results.txt"  # Fixed filename - overwrites existing
     with open(clean_file, 'w', encoding='utf-8') as f:
         f.write("CLEAN PAGES RESULTS - PYMUPDF EXTRACTION\n")
         f.write("Includes pages with gibberish < 50% and good readability\n")
@@ -147,7 +147,7 @@ def save_results(results):
             f.write("\n" + "=" * 80 + "\n\n")
     
     # Save problem pages list
-    problem_file = f"problem_pages_list.txt"  # Fixed filename - overwrites existing
+    problem_file = f"results/problem_pages_list.txt"  # Fixed filename - overwrites existing
     with open(problem_file, 'w', encoding='utf-8') as f:
         f.write("PROBLEM PAGES LIST - REQUIRES OCR PROCESSING\n")
         f.write("=" * 80 + "\n\n")
@@ -170,7 +170,7 @@ def save_results(results):
                 f.write(f"PAGE {page_result['page_num']}: {page_result['metrics']['confidence_score']:.1f}% confidence\n")
     
     # Save detailed report
-    report_file = f"phase1_report.txt"  # Fixed filename - overwrites existing
+    report_file = f"results/phase1_report.txt"  # Fixed filename - overwrites existing
     with open(report_file, 'w', encoding='utf-8') as f:
         f.write("PHASE 1 SCREENING REPORT - PYMUPDF ANALYSIS\n")
         f.write("=" * 80 + "\n")
@@ -201,7 +201,7 @@ def save_results(results):
             f.write(f"Problem page numbers: {[p['page_num'] for p in results['problem_pages']]}\n")
     
     # Save comprehensive all pages results
-    all_pages_file = f"all_pages_results.txt"  # Fixed filename - overwrites existing
+    all_pages_file = f"results/all_pages_results.txt"  # Fixed filename - overwrites existing
     with open(all_pages_file, 'w', encoding='utf-8') as f:
         f.write("ALL PAGES RESULTS - COMPREHENSIVE PYMUPDF ANALYSIS\n")
         f.write("=" * 80 + "\n")
@@ -260,7 +260,7 @@ def save_results(results):
                 f.write("\n" + "=" * 80 + "\n\n")
     
     # Save clean pages only (for smart selection approach)
-    clean_only_file = f"pymupdf_clean_pages_only.txt"  # Only clean pages for LLM comparison
+    clean_only_file = f"results/pymupdf_clean_pages_only.txt"  # Only clean pages for LLM comparison
     with open(clean_only_file, 'w', encoding='utf-8') as f:
         f.write("PYMUPDF CLEAN PAGES ONLY - FOR SMART SELECTION\n")
         f.write("=" * 80 + "\n")

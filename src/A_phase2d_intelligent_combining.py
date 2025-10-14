@@ -19,7 +19,7 @@ from datetime import datetime
 
 def read_smart_selection_results():
     """Read smart selection results from Phase 2C"""
-    selection_file = "smart_selection_results.json"
+    selection_file = "results/smart_selection_results.json"
     
     if not os.path.exists(selection_file):
         print("Error: Smart selection results not found!")
@@ -36,7 +36,7 @@ def read_smart_selection_results():
 
 def read_pymupdf_clean_pages():
     """Read PyMuPDF clean pages only"""
-    clean_file = "pymupdf_clean_pages_only.txt"
+    clean_file = "results/pymupdf_clean_pages_only.txt"
     
     if not os.path.exists(clean_file):
         print("Error: PyMuPDF clean pages file not found!")
@@ -59,7 +59,7 @@ def read_pymupdf_clean_pages():
 
 def read_ocr_all_pages():
     """Read OCR all pages results"""
-    ocr_file = "ocr_all_pages_results.txt"
+    ocr_file = "results/ocr_all_pages_results.txt"
     
     if not os.path.exists(ocr_file):
         print("Error: OCR results file not found!")
@@ -83,7 +83,7 @@ def read_ocr_all_pages():
 def create_intelligent_combined_file(selection_results, pymupdf_pages, ocr_pages):
     """Create final combined file with best text from each page"""
     
-    combined_file = "intelligent_combined_all_pages.txt"
+    combined_file = "results/intelligent_combined_all_pages.txt"
     
     print("PHASE 2D: INTELLIGENT COMBINING")
     print("=" * 80)
@@ -142,7 +142,7 @@ def create_intelligent_combined_file(selection_results, pymupdf_pages, ocr_pages
 def generate_selection_summary(selection_results):
     """Generate detailed selection summary"""
     
-    summary_file = "intelligent_combining_summary.txt"
+    summary_file = "results/intelligent_combining_summary.txt"
     
     with open(summary_file, 'w', encoding='utf-8') as f:
         f.write("INTELLIGENT COMBINING SUMMARY - PHASE 2D\n")

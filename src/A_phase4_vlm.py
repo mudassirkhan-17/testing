@@ -19,7 +19,7 @@ import base64
 from dotenv import load_dotenv
 
 # Load environment variables
-load_dotenv()
+load_dotenv('../config/.env')
 
 def read_extraction_results():
     """Read the LLM extraction results to determine VLM targets"""
@@ -459,13 +459,12 @@ def main():
     print("STEP 3: VLM VALIDATION")
     print("=" * 80)
     
-    # Set OpenAI API key
-    # Set OpenAI API key from environment
+    # Load API key from environment
     openai.api_key = os.getenv('OPENAI_API_KEY')
     
     if not openai.api_key:
         print("Error: OPENAI_API_KEY not found in environment variables!")
-        print("Please set your OpenAI API key in the .env file")
+        print("Please set your API key in the .env file")
         exit(1)
     
     # Read LLM extraction results
@@ -484,7 +483,7 @@ def main():
     
     # Process each target page with VLM
     vlm_results = {}
-    pdf_file = "pdf/PROPERTY QUOTE.pdf"
+    pdf_file = "../pdf/PROPERTY QUOTE.pdf"
     
     for page_num in vlm_pages:
         print(f"\nProcessing Page {page_num} with VLM...")

@@ -15,7 +15,7 @@ def push_to_sheets():
     print("Starting Google Sheets push...")
     
     # 1. READ THE DATA
-    with open('final_validated_fields.json', 'r') as f:
+    with open('results/final_validated_fields.json', 'r', encoding='utf-8') as f:
         data = json.load(f)
     
     print(f"Loaded {len(data)} fields from JSON")
@@ -25,7 +25,7 @@ def push_to_sheets():
         'https://www.googleapis.com/auth/spreadsheets',
         'https://www.googleapis.com/auth/drive'
     ]
-    creds = Credentials.from_service_account_file('credentials.json', scopes=scope)
+    creds = Credentials.from_service_account_file('config/credentials.json', scopes=scope)
     client = gspread.authorize(creds)
     
     print("Connected to Google Sheets!")
@@ -43,16 +43,13 @@ def push_to_sheets():
     all_rows = []
     
     # Header row
-    all_rows.append(["Field Name", "LLM Value", "VLM Value", "Final Value", "Confidence", "Source Page"])
+    all_rows.append(["Field Name", "LLM Value", "Source Page"])
     
     # Data rows
     for field_name, field_data in data.items():
         row = [
             field_name,
             field_data.get('llm_value', 'null'),
-            field_data.get('vlm_value', 'null'), 
-            field_data.get('final_value', 'null'),
-            field_data.get('confidence', 'unknown'),
             field_data.get('source_page', '')
         ]
         all_rows.append(row)

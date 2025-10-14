@@ -19,11 +19,11 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 # Load environment variables
-load_dotenv()
+load_dotenv('config/.env')
 
 def read_pymupdf_clean_pages():
     """Read PyMuPDF clean pages only"""
-    clean_file = "pymupdf_clean_pages_only.txt"
+    clean_file = "results/pymupdf_clean_pages_only.txt"
     
     if not os.path.exists(clean_file):
         print("Error: PyMuPDF clean pages file not found!")
@@ -50,7 +50,7 @@ def read_pymupdf_clean_pages():
 
 def read_ocr_all_pages():
     """Read OCR all pages results"""
-    ocr_file = "ocr_all_pages_results.txt"
+    ocr_file = "results/ocr_all_pages_results.txt"
     
     if not os.path.exists(ocr_file):
         print("Error: OCR results file not found!")
@@ -230,12 +230,12 @@ def save_selection_results(selection_results):
     """Save smart selection results"""
     
     # Save selection decisions
-    selection_file = "smart_selection_results.json"
+    selection_file = "results/smart_selection_results.json"
     with open(selection_file, 'w', encoding='utf-8') as f:
         json.dump(selection_results, f, indent=2, ensure_ascii=False)
     
     # Save summary report
-    report_file = "smart_selection_report.txt"
+    report_file = "results/smart_selection_report.txt"
     with open(report_file, 'w', encoding='utf-8') as f:
         f.write("SMART SELECTION REPORT - PHASE 2C\n")
         f.write("=" * 80 + "\n")
@@ -286,7 +286,7 @@ if __name__ == "__main__":
     
     if not openai.api_key:
         print("Error: OPENAI_API_KEY not found in environment variables!")
-        print("Please set your OpenAI API key in the .env file")
+        print("Please set your API key in the .env file")
         exit(1)
     
     print("PHASE 2C: SMART LLM SELECTION")

@@ -1,0 +1,188 @@
+{
+  "Construction Type": {
+    "llm_value": null,
+    "vlm_value": null,
+    "final_value": null,
+    "confidence": "llm_only"
+  },
+  "Valuation and Coinsurance": {
+    "llm_value": "80% RC",
+    "vlm_value": "Replacement Cost, 80%",
+    "final_value": "Replacement Cost, 80%",
+    "confidence": "llm+vlm_high"
+  },
+  "Cosmetic Damage": {
+    "llm_value": null,
+    "vlm_value": "COSMETIC DAMAGE ROOF EXCLUSION",
+    "final_value": "COSMETIC DAMAGE ROOF EXCLUSION",
+    "confidence": "llm+vlm_high"
+  },
+  "Building": {
+    "llm_value": "$1,500,000",
+    "vlm_value": null,
+    "final_value": "$1,500,000",
+    "confidence": "llm_only"
+  },
+  "Pumps": {
+    "llm_value": null,
+    "vlm_value": null,
+    "final_value": null,
+    "confidence": "llm_only"
+  },
+  "Canopy": {
+    "llm_value": null,
+    "vlm_value": null,
+    "final_value": null,
+    "confidence": "llm_only"
+  },
+  "ROOF EXCLUSION": {
+    "llm_value": null,
+    "vlm_value": "COSMETIC DAMAGE ROOF EXCLUSION",
+    "final_value": "COSMETIC DAMAGE ROOF EXCLUSION",
+    "confidence": "llm+vlm_high"
+  },
+  "Roof Surfacing": {
+    "llm_value": null,
+    "vlm_value": null,
+    "final_value": null,
+    "confidence": "llm_only"
+  },
+  "Roof Surfacing -Limitation": {
+    "llm_value": null,
+    "vlm_value": "ACV ROOF LIMITATION FORM",
+    "final_value": "ACV ROOF LIMITATION FORM",
+    "confidence": "llm+vlm_high"
+  },
+  "Business Personal Property": {
+    "llm_value": "$1,500,000",
+    "vlm_value": "$1,500,000",
+    "final_value": "$1,500,000",
+    "confidence": "llm+vlm_high"
+  },
+  "Business Income": {
+    "llm_value": "$100,000",
+    "vlm_value": "BUSINESS INCOME (AND EXTRA EXPENSE) COVERAGE FORM",
+    "final_value": "BUSINESS INCOME (AND EXTRA EXPENSE) COVERAGE FORM",
+    "confidence": "llm+vlm_high"
+  },
+  "Business Income with Extra Expense": {
+    "llm_value": null,
+    "vlm_value": "BUSINESS INCOME (AND EXTRA EXPENSE) COVERAGE FORM",
+    "final_value": "BUSINESS INCOME (AND EXTRA EXPENSE) COVERAGE FORM",
+    "confidence": "llm+vlm_high"
+  },
+  "Equipment Breakdown": {
+    "llm_value": null,
+    "vlm_value": "BOILER AND MACHINERY/EQUIPMENT BREAKDOWN DECLARATIONS",
+    "final_value": "BOILER AND MACHINERY/EQUIPMENT BREAKDOWN DECLARATIONS",
+    "confidence": "llm+vlm_high"
+  },
+  "Outdoor Signs": {
+    "llm_value": null,
+    "vlm_value": null,
+    "final_value": null,
+    "confidence": "llm_only"
+  },
+  "Signs Within 1,000 Feet to Premises": {
+    "llm_value": null,
+    "vlm_value": null,
+    "final_value": null,
+    "confidence": "llm_only"
+  },
+  "Employee Dishonesty": {
+    "llm_value": null,
+    "vlm_value": null,
+    "final_value": null,
+    "confidence": "llm_only"
+  },
+  "Money & Securities": {
+    "llm_value": "$5,000",
+    "vlm_value": null,
+    "final_value": "$5,000",
+    "confidence": "llm_only"
+  },
+  "Money and Securities (Inside; Outside)": {
+    "llm_value": null,
+    "vlm_value": null,
+    "final_value": null,
+    "confidence": "llm_only"
+  },
+  "Spoilage": {
+    "llm_value": null,
+    "vlm_value": null,
+    "final_value": null,
+    "confidence": "llm_only"
+  },
+  "Theft": {
+    "llm_value": "$5,000",
+    "vlm_value": "Sublimit: $5,000",
+    "final_value": "Sublimit: $5,000",
+    "confidence": "llm+vlm_high"
+  },
+  "Theft Sublimit": {
+    "llm_value": "$5,000",
+    "vlm_value": "$5,000",
+    "final_value": "$5,000",
+    "confidence": "llm+vlm_high"
+  },
+  "Theft Deductible": {
+    "llm_value": null,
+    "vlm_value": "$5,000",
+    "final_value": "$5,000",
+    "confidence": "llm+vlm_high"
+  },
+  "Windstorm or Hail": {
+    "llm_value": null,
+    "vlm_value": "WINDSTORM OR HAIL DEDUCTIBLE",
+    "final_value": "WINDSTORM OR HAIL DEDUCTIBLE",
+    "confidence": "llm+vlm_high"
+  },
+  "Named Storm Deductible": {
+    "llm_value": null,
+    "vlm_value": null,
+    "final_value": null,
+    "confidence": "llm_only"
+  },
+  "Wind and Hail and Named Storm exclusion": {
+    "llm_value": null,
+    "vlm_value": null,
+    "final_value": null,
+    "confidence": "llm_only"
+  },
+  "All Other Perils Deductible": {
+    "llm_value": null,
+    "vlm_value": "$5,000",
+    "final_value": "$5,000",
+    "confidence": "llm+vlm_high"
+  },
+  "Fire Station Alarm": {
+    "llm_value": null,
+    "vlm_value": null,
+    "final_value": null,
+    "confidence": "llm_only"
+  },
+  "Burglar Alarm": {
+    "llm_value": null,
+    "vlm_value": null,
+    "final_value": null,
+    "confidence": "llm_only"
+  },
+  "Terrorism": {
+    "llm_value": "Included",
+    "vlm_value": "APPLIES",
+    "final_value": "APPLIES",
+    "confidence": "llm+vlm_high"
+  },
+  "Protective Safeguards Requirements": {
+    "llm_value": null,
+    "vlm_value": "PROTECTIVE SAFEGUARDS",
+    "final_value": "PROTECTIVE SAFEGUARDS",
+    "confidence": "llm+vlm_high"
+  },
+  "Minimum Earned Premium (MEP)": {
+    "llm_value": "25%",
+    "vlm_value": "MINIMUM EARNED PREMIUM ENDORSEMENT",
+    "final_value": "MINIMUM EARNED PREMIUM ENDORSEMENT",
+    "confidence": "llm+vlm_high"
+  }
+}
