@@ -1,30 +1,50 @@
 # Environment variables
-config/.env
-config/credentials.json
+.env
+.env.local
+.env.*.local
 
-# Results folder
-results/
-
-# Python cache
+# Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
 .Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# IDE files
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# OS files
+*~
 .DS_Store
-Thumbs.db
 
-# Logs
-*.log
+# Project specific
+uploads/
+results/
+.sass-cache/
+config/credentials.json
+*.pyc
 
 # Temporary files
 *.tmp
-*.temp
+*.bak
+.coverage
+.pytest_cache/
