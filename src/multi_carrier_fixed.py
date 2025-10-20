@@ -573,6 +573,12 @@ def push_multi_carrier_to_sheets(carriers):
     # 6. PREPARE SIDE-BY-SIDE DATA
     all_rows = []
     
+    # Add coverage type header
+    coverage_type = "Property Coverages"  # For property insurance
+    all_rows.append([coverage_type])
+    all_rows.append(["=" * len(coverage_type)])  # Underline
+    all_rows.append([])  # Empty row for spacing
+    
     # Create header row
     header = ["Field Name"]
     for carrier in carriers:
