@@ -19,7 +19,14 @@ from datetime import datetime
 
 def read_smart_selection_results():
     """Read smart selection results from Phase 2C"""
-    selection_file = "results/smart_selection_results.json"
+    # DYNAMIC PATH DETECTION - Check current directory first
+    current_dir = os.getcwd()
+    if current_dir.endswith('src'):
+        # We're in src/ directory, use ../results/
+        selection_file = '../results/smart_selection_results.json'
+    else:
+        # We're in property/ directory, use results/
+        selection_file = 'results/smart_selection_results.json'
     
     if not os.path.exists(selection_file):
         print("Error: Smart selection results not found!")
@@ -36,9 +43,19 @@ def read_smart_selection_results():
 
 def read_pymupdf_clean_pages():
     """Read PyMuPDF clean pages only"""
-    clean_file = "results/pymupdf_clean_pages_only.txt"
+    # DYNAMIC PATH DETECTION
+    clean_paths = [
+        'results/pymupdf_clean_pages_only.txt',  # When run from property/ (via mine.py)
+        '../results/pymupdf_clean_pages_only.txt'  # When run from property/src/ (alone)
+    ]
     
-    if not os.path.exists(clean_file):
+    clean_file = None
+    for path in clean_paths:
+        if os.path.exists(path):
+            clean_file = path
+            break
+    
+    if not clean_file:
         print("Error: PyMuPDF clean pages file not found!")
         return {}
     
@@ -59,9 +76,19 @@ def read_pymupdf_clean_pages():
 
 def read_ocr_all_pages():
     """Read OCR all pages results"""
-    ocr_file = "results/ocr_all_pages_results.txt"
+    # DYNAMIC PATH DETECTION
+    ocr_paths = [
+        'results/ocr_all_pages_results.txt',  # When run from property/ (via mine.py)
+        '../results/ocr_all_pages_results.txt'  # When run from property/src/ (alone)
+    ]
     
-    if not os.path.exists(ocr_file):
+    ocr_file = None
+    for path in ocr_paths:
+        if os.path.exists(path):
+            ocr_file = path
+            break
+    
+    if not ocr_file:
         print("Error: OCR results file not found!")
         return {}
     
@@ -82,8 +109,16 @@ def read_ocr_all_pages():
 
 def create_intelligent_combined_file(selection_results, pymupdf_pages, ocr_pages):
     """Create final combined file with best text from each page"""
+    # DYNAMIC PATH DETECTION - Check current directory first
+    current_dir = os.getcwd()
+    if current_dir.endswith('src'):
+        # We're in src/ directory, use ../results/
+        results_dir = '../results'
+    else:
+        # We're in property/ directory, use results/
+        results_dir = 'results'
     
-    combined_file = "results/intelligent_combined_all_pages.txt"
+    combined_file = f"{results_dir}/intelligent_combined_all_pages.txt"
     
     print("PHASE 2D: INTELLIGENT COMBINING")
     print("=" * 80)
@@ -142,7 +177,22 @@ def create_intelligent_combined_file(selection_results, pymupdf_pages, ocr_pages
 def generate_selection_summary(selection_results):
     """Generate detailed selection summary"""
     
-    summary_file = "results/intelligent_combining_summary.txt"
+    # DYNAMIC PATH DETECTION
+    results_paths = [
+        'results',  # When run from property/ (via mine.py)
+        '../results'  # When run from property/src/ (alone)
+    ]
+    
+    results_dir = None
+    for path in results_paths:
+        if os.path.exists(path) or os.path.exists(os.path.dirname(path) if os.path.dirname(path) else '.'):
+            results_dir = path
+            break
+    
+    if not results_dir:
+        results_dir = 'results'  # Default fallback
+    
+    summary_file = f"{results_dir}/intelligent_combining_summary.txt"
     
     with open(summary_file, 'w', encoding='utf-8') as f:
         f.write("INTELLIGENT COMBINING SUMMARY - PHASE 2D\n")

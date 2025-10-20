@@ -89,64 +89,53 @@ def extract_with_llm(chunk, chunk_num, total_chunks):
     """Extract information using LLM with your exact prompt"""
     
     prompt = f"""
-    Analyze the following insurance document text and extract ONLY the 31 specific property coverage fields listed below.
+    Analyze the following general liability insurance document text and extract ONLY the 15 specific general liability coverage fields listed below.
     
-    CRITICAL: Extract ONLY these 31 fields. Do NOT create new field names or extract any other information.
+    CRITICAL: Extract ONLY these 15 fields. Do NOT create new field names or extract any other information.
     
-    THE 31 SPECIFIC FIELDS TO EXTRACT (with examples of what to look for):
-    1. Construction Type - Look for: "FRAME", "Frame", "Joisted Masonry", "Masonry Non-Combustible", any construction type
-    2. Valuation and Coinsurance - Look for: "Replacement Cost, 80%", "Replacement Cost, 90%", "Actual Cash Value", any valuation method with percentage
-    3. Cosmetic Damage - Look for: "Excluded", "Included", "Cosmetic Damage is Excluded", any cosmetic damage status
-    4. Building - Look for: "$500,000", "$600,000", "Coverage not required", "ACV on Roof: Cosmetic Damage is Excluded", any building coverage
-    5. Pumps - Look for: "$10,000.00", "$60,000", any pump coverage amount
-    6. Canopy - Look for: "$40,000", "$100,000", any canopy coverage amount
-    7. ROOF EXCLUSION - Look for: "Included", "Excluded", "Cosmetic Damage is Excluded", any roof exclusion status
-    8. Roof Surfacing - Look for: "ACV only applies to roofs that are more than 15 years old", any roof surfacing details
-    9. Roof Surfacing -Limitation - Look for: "ACV on Roof", "Cosmetic Damage is Excluded", any roof limitation details
-    10. Business Personal Property - Look for: "$50,000.00", "$200,000", "$125,000", any business personal property amount
-    11. Business Income - Look for: "$100,000", "$100,000 (1/6)", "$100,000 (1/3)", any business income amount with time periods
-    12. Business Income with Extra Expense - Look for: "$100,000", "with Extra Expense", any business income with extra expense
-    13. Equipment Breakdown - Look for: "Included", "$225,000", any equipment breakdown coverage
-    14. Outdoor Signs - Look for: "$10,000", "$5,000", "Included", "Deductible $250", any outdoor signs coverage
-    15. Signs Within 1,000 Feet to Premises - Look for: any signs within 1,000 feet coverage details
-    16. Employee Dishonesty - Look for: "$5,000", "Included", "Not Offered", "Not offered", any employee dishonesty coverage
-    17. Money & Securities - Look for: "$10,000", "$5,000", "On Premises $2,500 / Off Premises $2,500", any money & securities coverage
-    18. Money and Securities (Inside; Outside) - Look for: any separate inside/outside money & securities limits
-    19. Spoilage - Look for: "$5,000", "$10,000", "Deductible $250", any spoilage coverage
-    20. Theft - Look for: "Sublimit: $5,000", "Ded: $2,500", "Sublimit $10,000", "Deductible $1,000", any theft coverage
-    21. Theft Sublimit - Look for: "$5,000", "$15,000", "$10,000", any theft sublimit amount
-    22. Theft Deductible - Look for: "$2,500", "$1,000", "$250", any theft deductible amount
-    23. Windstorm or Hail - Look for: "$2,500", "2%", "1%", "Min Per Building", any windstorm or hail coverage
-    24. Named Storm Deductible - Look for: any named storm deductible amount
-    25. Wind and Hail and Named Storm exclusion - Look for: any wind/hail/named storm exclusion details
-    26. All Other Perils Deductible - Look for: "$2,500", "$1,000", any other perils deductible amount
-    27. Fire Station Alarm - Look for: "$2,500.00", "Local", "Central", any fire station alarm details
-    28. Burglar Alarm - Look for: "Local", "Central", "Active Central Station", any burglar alarm details
-    29. Terrorism - Look for: "APPLIES", "Excluded", "Included", "Can be added", any terrorism coverage status
-    30. Protective Safeguards Requirements - Look for: any protective safeguards requirements listed
-    31. Minimum Earned Premium (MEP) - Look for: "25%", "MEP: 25%", "35%", "MEP: 35%", any percentage
+    THE 18 SPECIFIC FIELDS TO EXTRACT (with examples of what to look for):
+    1. Each Occurrence/General Aggregate Limits - Look for: "$1,000,000 / $2,000,000", "$1M / $2M", any occurrence/aggregate limits with dollar amounts and "/" separator
+    2. Liability Deductible - Per claim or Per Occ basis - Look for: "$0", "$500", "$1,000", "Per claim", "Per Occurrence", any liability deductible amount
+    3. Hired Auto And Non-Owned Auto Liability - Without Delivery Service - Look for: "Included", "Excluded", "$1,000,000 / $1,000,000", any hired/non-owned auto coverage
+    4. Fuel Contamination coverage limits - Look for: "Each Customer's Auto Limit $1,000", "Aggregate Limit $5,000", any fuel contamination coverage
+    5. Vandalism coverage - Look for: any vandalism coverage details
+    6. Garage Keepers Liability - Look for: "Limit: $60,000", "Comprehensive Deductible: $500", "Collision Deductible: $500", any garage keepers liability
+    7. Employment Practices Liability - Look for: "Each Claim Limit $25,000", "Aggregate Limit $25,000", any employment practices liability
+    8. Abuse & Molestation Coverage limits - Look for: "Excluded", "Included", "Exclusion - Abuse or Molestation", any abuse & molestation coverage status
+    9. Assault & Battery Coverage limits - Look for: "$100,000 / $200,000", "Not Excluded", "Excluded", "Limited Coverage - Assault or Battery", any assault & battery coverage
+    10. Firearms/Active Assailant Coverage limits - Look for: "Not Excluded", "Excluded", any firearms/active assailant coverage
+    11. Additional Insured - Look for: "786 ALLGOOD ROAD LLC", "C/O GIL MOOR", specific company names and addresses, any additional insured details
+    12. Additional Insured (Mortgagee) - Look for: "FIRST HORIZON BANK", "NORTHEAST BANK", "PO BOX", specific bank names and addresses, any mortgagee additional insured details
+    13. Additional Insured - Jobber - Look for: "Premier Petroleum", any jobber additional insured details
+    14. Exposure - Look for: "Inside Sales: $400,000", "Gasoline Gallons: 400,000", any exposure details with sales and gallons
+    15. Rating basis: If Sales - Subject to Audit - Look for: "Sales $300,000", "Gasoline 48,000 Gallons", "Area: 1,600 Sqft", any rating basis information
+    16. Terrorism - Look for: "Excluded", "Can be added with additional premium", "Excluded - Can be Added With Additional Premium", any terrorism coverage status
+    17. Personal and Advertising Injury Limit - Look for: "$1,000,000", "Excluded", any personal and advertising injury limit
+    18. Products/Completed Operations Aggregate Limit - Look for: "Excluded", any products/completed operations aggregate limit
+    19. Minimum Earned - Look for: "25%", "MEP: 25%", "35%", any minimum earned premium percentage
     
     EXTRACTION RULES:
     - Extract EXACTLY as written in the document
     - Look for SIMILAR PATTERNS even if exact examples don't match
-    - For Construction Type: Look for any construction type mentioned (Frame, Masonry, Brick, etc.)
-    - For Valuation: Look for any valuation method (Replacement Cost, Actual Cash Value, etc.) with percentages
+    - For Limits: Look for dollar amounts with "/" separator (e.g., "$X,XXX,XXX / $X,XXX,XXX")
     - For Dollar Amounts: Look for any dollar amounts ($X,XXX, $X,XXX.XX, $XXX,XXX)
-    - For Percentages: Look for any percentages (X%, X.X%)
-    - For Deductibles: Look for "Deductible", "Ded", "Min", "Per" with amounts
-    - For Sublimits: Look for "Sublimit", "Limit", "Max" with amounts
-    - For Coverage Status: Look for "Included", "Excluded", "Not Offered", "Not offered", "Coverage not required"
-    - For Business Income: Look for amounts with time periods like "(1/6)", "(1/3)", "per month"
+    - For Coverage Status: Look for "Included", "Excluded", "Not Excluded"
+    - For Deductibles: Look for "Per claim", "Per Occurrence", "Per Occ" with amounts
+    - For Additional Insured: Extract complete details including names and addresses
+    - For Rating Basis: Extract complete sales/area/gasoline information
     - For Multi-line Values: Extract everything related to that field, preserve line breaks
     - For Complex Values: Extract the complete text block for that field
+    - CRITICAL: Do NOT extract "See Carrier Quote" or "See Quote" - extract the ACTUAL VALUES
+    - CRITICAL: Look for the actual dollar amounts, limits, and specific details
+    - CRITICAL: If you see a table with columns, extract the values from the appropriate column
     - If field is not found, set to null
     - Do NOT hallucinate or make up values
     - Do NOT combine or modify existing values
     - If you see variations not in examples, still extract them exactly as written
-    - Look for field names even if they're worded differently (e.g., "Wind/Hail" instead of "Windstorm or Hail")
     - Do NOT extract administrative, financial, or policy information
     - Do NOT create new field names
-    - Do NOT extract premium finance agreements, policy numbers, or legal disclosures
+    - Do NOT extract policy numbers or legal disclosures
+    - Note: Some quotes may have multiple columns (2-3 carriers), extract values for EACH column as separate entries when applicable
     
     IMPORTANT: This is chunk {chunk_num} of {total_chunks}. This chunk contains pages {chunk['page_nums']}. 
     
@@ -155,11 +144,25 @@ def extract_with_llm(chunk, chunk_num, total_chunks):
     
     CRITICAL: Return ONLY valid JSON with this exact format:
     {{
-        "Construction Type": {{"value": "FRAME", "page": 5}},
-        "Building": {{"value": "$500,000", "page": 5}},
-        "Theft Sublimit": {{"value": "$10,000", "page": 6}},
-        "Minimum Earned Premium (MEP)": {{"value": "25%", "page": 3}},
-        // ... other fields
+        "Each Occurrence/General Aggregate Limits": {{"value": "$1,000,000 / $2,000,000", "page": 5}},
+        "Liability Deductible - Per claim or Per Occ basis": {{"value": "$0", "page": 5}},
+        "Hired Auto And Non-Owned Auto Liability - Without Delivery Service": {{"value": "Included", "page": 5}},
+        "Fuel Contamination coverage limits": {{"value": "Each Customer's Auto Limit $1,000, Aggregate Limit $5,000", "page": 3}},
+        "Vandalism coverage": {{"value": null, "page": null}},
+        "Garage Keepers Liability": {{"value": "Limit: $60,000, Comprehensive Deductible: $500, Collision Deductible: $500", "page": 3}},
+        "Employment Practices Liability": {{"value": "Each Claim Limit $25,000, Aggregate Limit $25,000", "page": 3}},
+        "Abuse & Molestation Coverage limits": {{"value": null, "page": null}},
+        "Assault & Battery Coverage limits": {{"value": "$100,000 / $200,000", "page": 5}},
+        "Firearms/Active Assailant Coverage limits": {{"value": "Not Excluded", "page": 5}},
+        "Additional Insured": {{"value": "786 ALLGOOD ROAD LLC C/O GIL MOOR 786 ALLGOOD RD MARIETTA GA 30062", "page": 3}},
+        "Additional Insured (Mortgagee)": {{"value": "FIRST HORIZON BANK PO BOX 132 MEMPHIS TN 38101", "page": 3}},
+        "Additional Insured - Jobber": {{"value": "Premier Petroleum", "page": 3}},
+        "Exposure": {{"value": "Inside Sales: $400,000, Gasoline Gallons: 400,000", "page": 3}},
+        "Rating basis: If Sales - Subject to Audit": {{"value": "Sales $300,000, Gasoline 48,000 Gallons", "page": 3}},
+        "Terrorism": {{"value": "Excluded, Can be added with additional premium", "page": 3}},
+        "Personal and Advertising Injury Limit": {{"value": "$1,000,000", "page": 5}},
+        "Products/Completed Operations Aggregate Limit": {{"value": "Excluded", "page": 5}},
+        "Minimum Earned": {{"value": "25%", "page": 3}}
     }}
     
     PAGE DETECTION RULES:
@@ -252,17 +255,27 @@ def extract_with_llm(chunk, chunk_num, total_chunks):
 def merge_extraction_results(all_results):
     """Merge results from all chunks, prioritizing non-null values"""
     
-    # Define the expected fields
+    # Define the expected fields for GENERAL LIABILITY INSURANCE
     expected_fields = [
-        "Construction Type", "Valuation and Coinsurance", "Cosmetic Damage", "Building",
-        "Pumps", "Canopy", "ROOF EXCLUSION", "Roof Surfacing", "Roof Surfacing -Limitation",
-        "Business Personal Property", "Business Income", "Business Income with Extra Expense",
-        "Equipment Breakdown", "Outdoor Signs", "Signs Within 1,000 Feet to Premises",
-        "Employee Dishonesty", "Money & Securities", "Money and Securities (Inside; Outside)",
-        "Spoilage", "Theft", "Theft Sublimit", "Theft Deductible", "Windstorm or Hail",
-        "Named Storm Deductible", "Wind and Hail and Named Storm exclusion",
-        "All Other Perils Deductible", "Fire Station Alarm", "Burglar Alarm", "Terrorism",
-        "Protective Safeguards Requirements", "Minimum Earned Premium (MEP)"
+        "Each Occurrence/General Aggregate Limits",
+        "Liability Deductible - Per claim or Per Occ basis",
+        "Hired Auto And Non-Owned Auto Liability - Without Delivery Service",
+        "Fuel Contamination coverage limits",
+        "Vandalism coverage",
+        "Garage Keepers Liability",
+        "Employment Practices Liability",
+        "Abuse & Molestation Coverage limits",
+        "Assault & Battery Coverage limits",
+        "Firearms/Active Assailant Coverage limits",
+        "Additional Insured",
+        "Additional Insured (Mortgagee)",
+        "Additional Insured - Jobber",
+        "Exposure",
+        "Rating basis: If Sales - Subject to Audit",
+        "Terrorism",
+        "Personal and Advertising Injury Limit",
+        "Products/Completed Operations Aggregate Limit",
+        "Minimum Earned"
     ]
     
     merged_result = {}
@@ -422,8 +435,8 @@ def create_final_validated_fields(merged_result):
     
     # Manual corrections for known page locations
     page_corrections = {
-        "Minimum Earned Premium (MEP)": "Page 3",
-        "Terrorism": "Page 3"
+        "Terrorism": "Page 3",
+        "Rating basis: If Sales - Subject to Audit": "Page 3"
     }
     
     for field_name, llm_value in merged_result.items():

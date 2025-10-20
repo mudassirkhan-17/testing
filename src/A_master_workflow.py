@@ -10,8 +10,6 @@ Phase 2D: Intelligent combining (creates final optimized text)
 Phase 3: LLM field extraction
 Phase 4: VLM validation and final results
 
-ENHANCED VERSION: Processes ALL PDFs in pdf/ folder automatically
-
 Usage: python A_master_workflow.py
 """
 
@@ -19,9 +17,45 @@ import subprocess
 import sys
 import os
 import time
-import glob
-import json
 from datetime import datetime
+
+def get_pdf_path_from_selector():
+    """Get PDF path from PDF input selector"""
+    print(f"\nGETTING PDF PATH FROM SELECTOR")
+    print("=" * 50)
+    
+    try:
+        # Change to property directory first
+        original_dir = os.getcwd()
+        property_dir = os.path.join(original_dir, "property")
+        os.chdir(property_dir)
+        
+        # Run the PDF input selector
+        result = subprocess.run([sys.executable, "src/pdf_input_selector.py"], 
+                              capture_output=True, text=True)
+        
+        # Change back to original directory
+        os.chdir(original_dir)
+        
+        if result.returncode == 0:
+            # Extract PDF path from output
+            output_lines = result.stdout.strip().split('\n')
+            for line in output_lines:
+                if "Selected PDF Path:" in line:
+                    pdf_path = line.split("Selected PDF Path:")[-1].strip()
+                    print(f"PDF Path Selected: {pdf_path}")
+                    return pdf_path
+            
+            print("Could not extract PDF path from selector output")
+            return None
+        else:
+            print("PDF Input Selector failed!")
+            print("Error:", result.stderr)
+            return None
+            
+    except Exception as e:
+        print(f"Error running PDF Input Selector: {e}")
+        return None
 
 def run_phase(phase_name, script_name, description):
     """Run a phase and handle errors"""
@@ -32,9 +66,9 @@ def run_phase(phase_name, script_name, description):
     print(f"{'='*80}")
     
     try:
-        # Run the phase script from root directory
-        result = subprocess.run([sys.executable, f"src/{script_name}"], 
-                              capture_output=True, text=True)
+        # Run the phase script
+        result = subprocess.run([sys.executable, script_name], 
+                              capture_output=True, text=True, cwd=os.getcwd())
         
         if result.returncode == 0:
             print(f"{phase_name} COMPLETED SUCCESSFULLY!")
@@ -52,322 +86,185 @@ def run_phase(phase_name, script_name, description):
         print(f"Error: {e}")
         return False
 
-def get_all_pdfs():
-    """Get all PDF files from pdf/ folder"""
-    pdf_folder = "pdf"
-    if not os.path.exists(pdf_folder):
-        print(f"Error: PDF folder '{pdf_folder}' not found!")
-        return []
+def update_phase_scripts_with_pdf_path(pdf_path):
+    """Update phase scripts with the selected PDF path"""
+    print(f"\nUPDATING PHASE SCRIPTS WITH PDF PATH: {pdf_path}")
+    print("=" * 50)
     
-    pdf_files = glob.glob(os.path.join(pdf_folder, "*.pdf"))
-    pdf_files = [os.path.basename(pdf) for pdf in pdf_files]  # Get just filenames
-    
-    if not pdf_files:
-        print(f"No PDF files found in {pdf_folder}/ folder!")
-        return []
-    
-    print(f"Found {len(pdf_files)} PDF files:")
-    for i, pdf in enumerate(pdf_files, 1):
-        print(f"   {i}. {pdf}")
-    
-    return pdf_files
-
-def check_prerequisites():
-    """Check if all required files exist"""
-    # Change to src directory for file checks
-    original_dir = os.getcwd()
-    os.chdir("src")
-    
-    required_files = [
-        "A_phase1_Pymupdf.py",
-        "A_phase2_ocr.py", 
-        "A_phase2c_smart_selection.py",
-        "A_phase2d_intelligent_combining.py",
-        "A_phase3_llm_extraction.py",
-        "A_phase4_vlm.py",
-        "A_phase5_simple_sheets.py"
+    # Phase scripts that need PDF path updates
+    phase_scripts = [
+        "src/A_phase1_Pymupdf.py",
+        "src/A_phase2_ocr.py", 
+        "src/A_phase3_llm_extraction.py",
+        "src/A_phase4_vlm.py"
     ]
     
-    missing_files = []
-    for file in required_files:
-        if not os.path.exists(file):
-            missing_files.append(file)
-    
-    if missing_files:
-        print("MISSING REQUIRED FILES:")
-        for file in missing_files:
-            print(f"   - {file}")
-        os.chdir(original_dir)
-        return False
-    
-    # Check if any PDFs exist
-    pdf_files = glob.glob("../pdf/*.pdf")
-    if not pdf_files:
-        print("MISSING PDF FILES: No PDF files found in pdf/ folder")
-        print("Please add PDF files to the pdf/ subdirectory.")
-        os.chdir(original_dir)
-        return False
-    
-    # Check if .env exists
-    if not os.path.exists("../config/.env"):
-        print("MISSING ENVIRONMENT FILE: ../config/.env")
-        print("Please create ../config/.env with your API key")
-        os.chdir(original_dir)
-        return False
-    
-    # Return to original directory
-    os.chdir(original_dir)
-    return True
-
-def process_single_pdf(pdf_name):
-    """Process a single PDF through the entire pipeline"""
-    print(f"\n{'='*80}")
-    print(f"PROCESSING PDF: {pdf_name}")
-    print(f"{'='*80}")
-    
-    # Update PDF path in phase scripts temporarily
-    original_pdf_paths = {}
+    original_contents = {}
     
     try:
-        # Modify phase scripts to use specific PDF
-        phase_scripts = [
-            "src/A_phase1_Pymupdf.py",
-            "src/A_phase2_ocr.py", 
-            "src/A_phase4_vlm.py"
-        ]
-        
         for script in phase_scripts:
             if os.path.exists(script):
                 # Read current content
                 with open(script, 'r', encoding='utf-8') as f:
                     content = f.read()
                 
-                # Store original path
-                original_pdf_paths[script] = content
+                # Store original content
+                original_contents[script] = content
                 
-                # Replace PDF path
-                new_content = content.replace(
-                    'pdf_file = "pdf/PROPERTY QUOTE.pdf"',
-                    f'pdf_file = "pdf/{pdf_name}"'
-                )
+                # Update PDF path
+                if 'pdf_file = "pdf/PROPERTY QUOTE.pdf"' in content:
+                    new_content = content.replace(
+                        'pdf_file = "pdf/PROPERTY QUOTE.pdf"',
+                        f'pdf_file = "{pdf_path}"'
+                    )
+                elif 'pdf_file = "../pdf/PROPERTY QUOTE.pdf"' in content:
+                    new_content = content.replace(
+                        'pdf_file = "../pdf/PROPERTY QUOTE.pdf"',
+                        f'pdf_file = "{pdf_path}"'
+                    )
+                else:
+                    print(f"⚠️  Warning: Could not find PDF path pattern in {script}")
+                    continue
                 
-                # Write modified content
+                # Write updated content
                 with open(script, 'w', encoding='utf-8') as f:
                     f.write(new_content)
+                
+                print(f"Updated: {script}")
         
-        # Run the pipeline phases
-        phases = [
-            {
-                "name": "PHASE 1: PYMUPDF EXTRACTION",
-                "script": "A_phase1_Pymupdf.py",
-                "description": f"Extract text from {pdf_name} using PyMuPDF"
-            },
-            {
-                "name": "PHASE 2: OCR PROCESSING", 
-                "script": "A_phase2_ocr.py",
-                "description": f"Process all pages of {pdf_name} with OCR"
-            },
-            {
-                "name": "PHASE 2C: SMART LLM SELECTION",
-                "script": "A_phase2c_smart_selection.py", 
-                "description": f"Use GPT-3.5 to select best text source for {pdf_name}"
-            },
-            {
-                "name": "PHASE 2D: INTELLIGENT COMBINING",
-                "script": "A_phase2d_intelligent_combining.py",
-                "description": f"Combine best text from {pdf_name} pages"
-            },
-            {
-                "name": "PHASE 3: LLM FIELD EXTRACTION",
-                "script": "A_phase3_llm_extraction.py",
-                "description": f"Extract insurance fields from {pdf_name}"
-            }
-        ]
+        return original_contents
         
-        success = True
-        for phase in phases:
-            if not run_phase(phase["name"], phase["script"], phase["description"]):
-                success = False
-                break
-        
-        return success
-        
-    finally:
-        # Restore original PDF paths
-        for script, original_content in original_pdf_paths.items():
+    except Exception as e:
+        print(f"Error updating PDF paths: {e}")
+        return {}
+
+def restore_phase_scripts(original_contents):
+    """Restore original phase scripts"""
+    print(f"\nRESTORING ORIGINAL PHASE SCRIPTS")
+    print("=" * 50)
+    
+    for script, original_content in original_contents.items():
+        try:
             with open(script, 'w', encoding='utf-8') as f:
                 f.write(original_content)
-
-def merge_all_results():
-    """Merge results from all processed PDFs"""
-    print(f"\n{'='*80}")
-    print("MERGING RESULTS FROM ALL PDFs")
-    print(f"{'='*80}")
-    
-    # Read all individual results
-    results_folder = "results"
-    all_results = {}
-    
-    # Find all extracted_insurance_fields.json files
-    result_files = glob.glob(os.path.join(results_folder, "*_extracted_insurance_fields.json"))
-    
-    if not result_files:
-        print("No individual results found to merge!")
-        return False
-    
-    print(f"Found {len(result_files)} result files to merge:")
-    for file in result_files:
-        print(f"   - {os.path.basename(file)}")
-    
-    # Load all results
-    for result_file in result_files:
-        pdf_name = os.path.basename(result_file).replace("_extracted_insurance_fields.json", "")
-        try:
-            with open(result_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                all_results[pdf_name] = data
-                print(f"Loaded results from {pdf_name}")
+            print(f"Restored: {script}")
         except Exception as e:
-            print(f"Error loading {result_file}: {e}")
-    
-    # Merge results intelligently
-    merged_results = {}
-    
-    for pdf_name, pdf_results in all_results.items():
-        for field_name, field_data in pdf_results.items():
-            if field_name not in merged_results:
-                merged_results[field_name] = {
-                    'llm_value': field_data.get('llm_value', ''),
-                    'source_pdf': pdf_name,
-                    'source_page': field_data.get('source_page', ''),
-                    'confidence': field_data.get('confidence', 'medium')
-                }
-            else:
-                # Choose best value based on completeness and confidence
-                current_value = merged_results[field_name]['llm_value']
-                new_value = field_data.get('llm_value', '')
-                
-                # If current value is empty/blank, use new value
-                if not current_value or current_value.strip() == '' or current_value == 'null':
-                    merged_results[field_name] = {
-                        'llm_value': new_value,
-                        'source_pdf': pdf_name,
-                        'source_page': field_data.get('source_page', ''),
-                        'confidence': field_data.get('confidence', 'medium')
-                    }
-                # If new value is more complete, use it
-                elif new_value and len(new_value) > len(current_value):
-                    merged_results[field_name] = {
-                        'llm_value': new_value,
-                        'source_pdf': pdf_name,
-                        'source_page': field_data.get('source_page', ''),
-                        'confidence': field_data.get('confidence', 'medium')
-                    }
-    
-    # Save merged results
-    merged_file = os.path.join(results_folder, "merged_all_pdfs_results.json")
-    with open(merged_file, 'w', encoding='utf-8') as f:
-        json.dump(merged_results, f, indent=2, ensure_ascii=False)
-    
-    print(f"Merged results saved to: {merged_file}")
-    
-    # Create final validated fields file for Google Sheets
-    final_file = os.path.join(results_folder, "final_validated_fields.json")
-    with open(final_file, 'w', encoding='utf-8') as f:
-        json.dump(merged_results, f, indent=2, ensure_ascii=False)
-    
-    print(f"Final results saved to: {final_file}")
-    
-    return True
+            print(f"Error restoring {script}: {e}")
 
 def main():
-    """Main workflow execution - Enhanced for multiple PDFs"""
+    """Main workflow execution - DYNAMIC PDF PATH VERSION"""
     print("MASTER WORKFLOW - INTELLIGENT PDF PROCESSING PIPELINE")
-    print("ENHANCED VERSION: Processes ALL PDFs in pdf/ folder")
+    print("DYNAMIC PDF PATH VERSION")
     print("=" * 80)
     print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 80)
     
-    # Check prerequisites
-    print("\nCHECKING PREREQUISITES...")
-    if not check_prerequisites():
-        print("\nPREREQUISITES NOT MET. Please fix the issues above.")
+    # Get PDF path from selector
+    pdf_path = get_pdf_path_from_selector()
+    if not pdf_path:
+        print("\nFailed to get PDF path from selector!")
         return False
     
-    print("All prerequisites met!")
-    
-    # Get all PDFs to process
-    print("\nSCANNING PDF FOLDER...")
-    pdf_files = get_all_pdfs()
-    
-    if not pdf_files:
-        print("No PDF files found to process!")
+    # Update phase scripts with selected PDF path
+    original_contents = update_phase_scripts_with_pdf_path(pdf_path)
+    if not original_contents:
+        print("\nFailed to update phase scripts!")
         return False
     
-    print(f"\nWill process {len(pdf_files)} PDF files:")
-    for i, pdf in enumerate(pdf_files, 1):
-        print(f"   {i}. {pdf}")
-    
-    # Process each PDF individually
-    successful_pdfs = 0
-    failed_pdfs = []
-    
-    for i, pdf_file in enumerate(pdf_files, 1):
-        print(f"\n{'='*80}")
-        print(f"PROCESSING PDF {i}/{len(pdf_files)}: {pdf_file}")
-        print(f"{'='*80}")
+    try:
+        # Define the workflow phases
+        phases = [
+            {
+                "name": "PHASE 1: PYMUPDF EXTRACTION",
+                "script": "src/A_phase1_Pymupdf.py",
+                "description": f"Extract text from {pdf_path} using PyMuPDF and classify page quality"
+            },
+            {
+                "name": "PHASE 2: OCR PROCESSING", 
+                "script": "src/A_phase2_ocr.py",
+                "description": f"Process all pages of {pdf_path} with OCR for comprehensive coverage"
+            },
+            {
+                "name": "PHASE 2C: SMART LLM SELECTION",
+                "script": "src/A_phase2c_smart_selection.py", 
+                "description": f"Use GPT-3.5 to select best text source for each page of {pdf_path}"
+            },
+            {
+                "name": "PHASE 2D: INTELLIGENT COMBINING",
+                "script": "src/A_phase2d_intelligent_combining.py",
+                "description": f"Combine best text from each page of {pdf_path} into final optimized file"
+            },
+            {
+                "name": "PHASE 3: LLM FIELD EXTRACTION",
+                "script": "src/A_phase3_llm_extraction.py",
+                "description": f"Extract insurance fields from {pdf_path} using GPT-5"
+            },
+            # {
+            #     "name": "PHASE 4: VLM VALIDATION",
+            #     "script": "src/A_phase4_vlm.py",
+            #     "description": f"Validate fields from {pdf_path} using GPT-4 Vision and create final results"
+            # }
+            # VLM PHASE COMMENTED OUT TO SAVE COSTS - UNCOMMENT WHEN NEEDED
+            {
+                "name": "PHASE 4: GOOGLE SHEETS INTEGRATION",
+                "script": "src/A_phase5_simple_sheets.py",
+                "description": f"Push extracted fields from {pdf_path} to Google Sheets automatically"
+            }
+        ]
         
-        if process_single_pdf(pdf_file):
-            successful_pdfs += 1
-            print(f"✅ Successfully processed: {pdf_file}")
+        # Track successful phases
+        successful_phases = []
+        failed_phases = []
+        
+        # Run each phase
+        for i, phase in enumerate(phases, 1):
+            print(f"\nPHASE {i}/{len(phases)}: {phase['name']}")
+            
+            success = run_phase(phase['name'], phase['script'], phase['description'])
+            
+            if success:
+                successful_phases.append(phase['name'])
+            else:
+                failed_phases.append(phase['name'])
+                print(f"\nPHASE FAILED: {phase['name']}")
+                print("Stopping workflow due to phase failure.")
+                break
+        
+        # Final summary
+        print(f"\n{'='*80}")
+        print("WORKFLOW SUMMARY")
+        print(f"{'='*80}")
+        print(f"Selected PDF: {pdf_path}")
+        print(f"Total Phases: {len(phases)}")
+        print(f"Successful Phases: {len(successful_phases)}")
+        print(f"Failed Phases: {len(failed_phases)}")
+        
+        if successful_phases:
+            print("\nSuccessful Phases:")
+            for phase in successful_phases:
+                print(f"   - {phase}")
+        
+        if failed_phases:
+            print("\nFailed Phases:")
+            for phase in failed_phases:
+                print(f"   - {phase}")
+        
+        if len(successful_phases) == len(phases):
+            print(f"\nALL PHASES COMPLETED SUCCESSFULLY!")
+            print(f"Processed PDF: {pdf_path}")
+            print("Data has been extracted and processed")
+            print("Check the results/ folder for detailed outputs")
+            print("Data pushed to Google Sheets")
+            print("Data is now live in Google Sheets!")
+            return True
         else:
-            failed_pdfs.append(pdf_file)
-            print(f"❌ Failed to process: {pdf_file}")
+            print(f"\nWORKFLOW COMPLETED WITH ISSUES")
+            print("Some phases failed. Check the output above for details.")
+            return False
     
-    # Merge all results
-    print(f"\n{'='*80}")
-    print("MERGING RESULTS FROM ALL PDFs")
-    print(f"{'='*80}")
-    
-    if successful_pdfs > 0:
-        if merge_all_results():
-            print("✅ Successfully merged all results!")
-        else:
-            print("❌ Failed to merge results!")
-    
-    # Push to Google Sheets
-    print(f"\n{'='*80}")
-    print("PUSHING TO GOOGLE SHEETS")
-    print(f"{'='*80}")
-    
-    if successful_pdfs > 0:
-        if run_phase("GOOGLE SHEETS INTEGRATION", "A_phase5_simple_sheets.py", "Push merged data to Google Sheets"):
-            print("✅ Successfully pushed to Google Sheets!")
-        else:
-            print("❌ Failed to push to Google Sheets!")
-    
-    # Final summary
-    print(f"\n{'='*80}")
-    print("WORKFLOW SUMMARY")
-    print(f"{'='*80}")
-    print(f"Total PDFs Found: {len(pdf_files)}")
-    print(f"Successfully Processed: {successful_pdfs}")
-    print(f"Failed PDFs: {len(failed_pdfs)}")
-    
-    if failed_pdfs:
-        print("\nFailed PDFs:")
-        for pdf in failed_pdfs:
-            print(f"   - {pdf}")
-    
-    if successful_pdfs > 0:
-        print(f"\n🎉 SUCCESSFULLY PROCESSED {successful_pdfs} PDF(s)!")
-        print("📊 Data has been extracted and merged")
-        print("📁 Check the results/ folder for detailed outputs")
-        print("📈 Data pushed to Google Sheets with source tracking")
-        return True
-    else:
-        print(f"\n❌ NO PDFs PROCESSED SUCCESSFULLY!")
-        return False
+    finally:
+        # Always restore original phase scripts
+        restore_phase_scripts(original_contents)
 
 if __name__ == "__main__":
     success = main()

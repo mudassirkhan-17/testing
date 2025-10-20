@@ -14,9 +14,22 @@ def push_to_sheets():
     
     print("Starting Google Sheets push...")
     
-    # 1. READ THE DATA
-    with open('results/final_validated_fields.json', 'r', encoding='utf-8') as f:
-        data = json.load(f)
+    # 1. DYNAMIC PATH DETECTION
+    results_paths = [
+        'results/final_validated_fields.json',  # When run from property/ (via mine.py)
+        '../results/final_validated_fields.json'  # When run from property/src/ (alone)
+    ]
+    
+    data = None
+    for path in results_paths:
+        if os.path.exists(path):
+            print(f"Found data file at: {path}")
+            with open(path, 'r') as f:
+                data = json.load(f)
+            break
+    
+    if not data:
+        raise Exception("final_validated_fields.json not found! Check paths.")
     
     print(f"Loaded {len(data)} fields from JSON")
     
@@ -25,7 +38,23 @@ def push_to_sheets():
         'https://www.googleapis.com/auth/spreadsheets',
         'https://www.googleapis.com/auth/drive'
     ]
-    creds = Credentials.from_service_account_file('config/credentials.json', scopes=scope)
+    
+    # Dynamic credentials path detection
+    cred_paths = [
+        'config/credentials.json',  # When run from property/ (via mine.py)
+        '../config/credentials.json'  # When run from property/src/ (alone)
+    ]
+    
+    creds = None
+    for path in cred_paths:
+        if os.path.exists(path):
+            print(f"Found credentials at: {path}")
+            creds = Credentials.from_service_account_file(path, scopes=scope)
+            break
+    
+    if not creds:
+        raise Exception("credentials.json not found! Check paths.")
+    
     client = gspread.authorize(creds)
     
     print("Connected to Google Sheets!")

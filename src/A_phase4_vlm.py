@@ -483,7 +483,7 @@ def main():
     
     # Process each target page with VLM
     vlm_results = {}
-    pdf_file = "../pdf/PROPERTY QUOTE.pdf"
+    pdf_file = "pdf/PROPERTY QUOTE.pdf"
     
     for page_num in vlm_pages:
         print(f"\nProcessing Page {page_num} with VLM...")

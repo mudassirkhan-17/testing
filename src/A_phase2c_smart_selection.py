@@ -19,13 +19,23 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 # Load environment variables
-load_dotenv('config/.env')
+load_dotenv('../config/.env')
 
 def read_pymupdf_clean_pages():
     """Read PyMuPDF clean pages only"""
-    clean_file = "results/pymupdf_clean_pages_only.txt"
+    # DYNAMIC PATH DETECTION
+    clean_paths = [
+        'results/pymupdf_clean_pages_only.txt',  # When run from property/ (via mine.py)
+        '../results/pymupdf_clean_pages_only.txt'  # When run from property/src/ (alone)
+    ]
     
-    if not os.path.exists(clean_file):
+    clean_file = None
+    for path in clean_paths:
+        if os.path.exists(path):
+            clean_file = path
+            break
+    
+    if not clean_file:
         print("Error: PyMuPDF clean pages file not found!")
         print("Please run Phase 1 first.")
         return {}
@@ -50,9 +60,19 @@ def read_pymupdf_clean_pages():
 
 def read_ocr_all_pages():
     """Read OCR all pages results"""
-    ocr_file = "results/ocr_all_pages_results.txt"
+    # DYNAMIC PATH DETECTION
+    ocr_paths = [
+        'results/ocr_all_pages_results.txt',  # When run from property/ (via mine.py)
+        '../results/ocr_all_pages_results.txt'  # When run from property/src/ (alone)
+    ]
     
-    if not os.path.exists(ocr_file):
+    ocr_file = None
+    for path in ocr_paths:
+        if os.path.exists(path):
+            ocr_file = path
+            break
+    
+    if not ocr_file:
         print("Error: OCR results file not found!")
         print("Please run Phase 2 first.")
         return {}
@@ -228,14 +248,28 @@ def process_all_pages_selection(pymupdf_pages, ocr_pages):
 
 def save_selection_results(selection_results):
     """Save smart selection results"""
+    # DYNAMIC PATH DETECTION
+    results_paths = [
+        'results',  # When run from property/ (via mine.py)
+        '../results'  # When run from property/src/ (alone)
+    ]
+    
+    results_dir = None
+    for path in results_paths:
+        if os.path.exists(path) or os.path.exists(os.path.dirname(path) if os.path.dirname(path) else '.'):
+            results_dir = path
+            break
+    
+    if not results_dir:
+        results_dir = 'results'  # Default fallback
     
     # Save selection decisions
-    selection_file = "results/smart_selection_results.json"
+    selection_file = f"{results_dir}/smart_selection_results.json"
     with open(selection_file, 'w', encoding='utf-8') as f:
         json.dump(selection_results, f, indent=2, ensure_ascii=False)
     
     # Save summary report
-    report_file = "results/smart_selection_report.txt"
+    report_file = f"{results_dir}/smart_selection_report.txt"
     with open(report_file, 'w', encoding='utf-8') as f:
         f.write("SMART SELECTION REPORT - PHASE 2C\n")
         f.write("=" * 80 + "\n")
@@ -256,9 +290,9 @@ def save_selection_results(selection_results):
         
         f.write("DETAILED SELECTIONS:\n")
         f.write("-" * 30 + "\n")
-        for page_num in sorted(selection_results.keys()):
+        for page_num in sorted(selection_results.keys(), key=int):
             selection = selection_results[page_num]
-            f.write(f"Page {page_num:2d}: {selection['selected_source']:8s} - {selection['reason']} (confidence: {selection['confidence']})\n")
+            f.write(f"Page {int(page_num):2d}: {selection['selected_source']:8s} - {selection['reason']} (confidence: {selection['confidence']})\n")
     
     return selection_file, report_file
 

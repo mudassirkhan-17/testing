@@ -9,10 +9,19 @@ import io
 
 def get_all_pages_from_phase1():
     """Get all pages from Phase 1 results for OCR processing"""
-    # Read the all pages report to get total page count
-    report_file = "results/phase1_report.txt"
+    # DYNAMIC PATH DETECTION
+    report_paths = [
+        'results/phase1_report.txt',  # When run from property/ (via mine.py)
+        '../results/phase1_report.txt'  # When run from property/src/ (alone)
+    ]
     
-    if not os.path.exists(report_file):
+    report_file = None
+    for path in report_paths:
+        if os.path.exists(path):
+            report_file = path
+            break
+    
+    if not report_file:
         print("Error: No Phase 1 report found!")
         print("Please run Phase 1 first to generate report.")
         return []
@@ -185,8 +194,23 @@ def process_all_pages_with_ocr(pdf_file, all_pages):
 
 def save_ocr_results(results):
     """Save OCR results to files"""
+    # DYNAMIC PATH DETECTION
+    results_paths = [
+        'results',  # When run from property/ (via mine.py)
+        '../results'  # When run from property/src/ (alone)
+    ]
+    
+    results_dir = None
+    for path in results_paths:
+        if os.path.exists(path) or os.path.exists(os.path.dirname(path) if os.path.dirname(path) else '.'):
+            results_dir = path
+            break
+    
+    if not results_dir:
+        results_dir = 'results'  # Default fallback
+    
     # Save all OCR results in ONE single file
-    ocr_file = "results/ocr_all_pages_results.txt"  # Single file for all pages
+    ocr_file = f"{results_dir}/ocr_all_pages_results.txt"  # Single file for all pages
     
     with open(ocr_file, 'w', encoding='utf-8') as f:
         f.write("OCR EXTRACTION RESULTS - ALL PAGES\n")
@@ -212,8 +236,8 @@ def save_ocr_results(results):
     print(f"  Saved ALL OCR results: {ocr_file}")
     ocr_files = [ocr_file]
     
-    # Save processing log
-    log_file = f"results/ocr_processing_log.txt"  # Fixed filename - overwrites existing
+        # Save processing log
+    log_file = f"{results_dir}/ocr_processing_log.txt"  # Fixed filename - overwrites existing
     with open(log_file, 'w', encoding='utf-8') as f:
         f.write("OCR PROCESSING LOG - PHASE 2 (ALL PAGES)\n")
         f.write("=" * 80 + "\n")
@@ -286,7 +310,7 @@ def generate_summary(results):
     print(f"\nNext step: Run Phase 2C (Smart LLM Selection)")
 
 if __name__ == "__main__":
-    pdf_file = "pdf/PROPERTY QUOTE.pdf"
+    pdf_file = "../pdf/PROPERTY QUOTE1.pdf"
     
     # Check if PDF exists
     if not os.path.exists(pdf_file):
