@@ -120,10 +120,13 @@ def process_carrier_insurance_type(carrier, insurance_type, pdf_info):
     
     # Store original directory
     original_dir = os.getcwd()
-    
+    print(f"DEBUG: original_dir in process_carrier_insurance_type: {original_dir}")
+
     try:
         # Change to property directory (one level up from src/)
         property_dir = os.path.join(original_dir, "..")
+        print(f"DEBUG: calculated property_dir: {property_dir}")
+        print(f"DEBUG: property_dir exists: {os.path.exists(property_dir)}")
         os.chdir(property_dir)
         print(f"Changed to directory: {os.getcwd()}")
         
@@ -546,6 +549,187 @@ def create_carrier_final_validated_fields(carrier_name, insurance_type, merged_r
     
     print(f"✅ Created carrier final validated fields: {final_file}")
 
+def apply_sheets_formatting(sheet, total_rows, total_cols, insurance_types, carriers):
+    """Apply professional formatting to the Google Sheet in a SINGLE API CALL"""
+    try:
+        print("🎨 Applying professional formatting to Google Sheets (SINGLE BATCH CALL)...")
+        
+        # Merge company header row
+        company_header_range = f'A1:{chr(64 + total_cols)}1'
+        sheet.merge_cells(company_header_range)
+        print(f"  Merged company header cells: {company_header_range}")
+        
+        # Get all sheet values to find actual section boundaries
+        all_values = sheet.get_all_values()
+        
+        # Find sections by looking for section headers
+        section_starts = {}
+        section_ends = {}
+        
+        for row_idx, row in enumerate(all_values):
+            if row and len(row) > 0:
+                cell_value = str(row[0]).strip()
+                
+                if "Property Coverages" in cell_value:
+                    section_starts["property"] = row_idx + 1
+                    print(f"Found Property Coverages section at row {section_starts['property']}")
+                    
+                elif "General Liability Coverages" in cell_value:
+                    section_starts["general_liability"] = row_idx + 1
+                    print(f"Found General Liability Coverages section at row {section_starts['general_liability']}")
+                    
+                elif "Liquor Coverages" in cell_value:
+                    section_starts["liquor"] = row_idx + 1
+                    print(f"Found Liquor Coverages section at row {section_starts['liquor']}")
+        
+        # Calculate section ends
+        sorted_starts = sorted([(k, v) for k, v in section_starts.items()], key=lambda x: x[1])
+        for idx in range(len(sorted_starts)):
+            insurance_type, start_row = sorted_starts[idx]
+            col_header_row = start_row + 3
+            
+            if idx < len(sorted_starts) - 1:
+                # For non-last sections, scan backwards from next section to find last data row
+                next_section_header = sorted_starts[idx + 1][1]
+                end_row = col_header_row  # Default
+                
+                # Scan backwards from the next section header
+                for row_idx in range(next_section_header - 1, col_header_row, -1):
+                    row = all_values[row_idx - 1] if row_idx - 1 < len(all_values) else []  # Convert to 0-indexed
+                    # Check if first column has data
+                    if row and len(row) > 0 and str(row[0]).strip():
+                        end_row = row_idx  # Found last data row
+                        break
+            else:
+                # For last section, find the actual last row with data
+                end_row = col_header_row  # Default to column header row
+                
+                # Scan down to find last row with data in first column
+                for row_idx in range(col_header_row + 1, len(all_values)):
+                    row = all_values[row_idx] if row_idx < len(all_values) else []
+                    # Check if first column has data
+                    if row and len(row) > 0 and str(row[0]).strip():
+                        end_row = row_idx + 1  # Convert to 1-indexed
+                    elif end_row > col_header_row:
+                        # We found data before, now it's empty - stop here
+                        break
+            
+            section_ends[insurance_type] = end_row
+            print(f"{insurance_type}: rows {start_row} to {end_row}")
+        
+        # Build batch format requests - ALL formatting in ONE API call
+        batch_requests = []
+        
+        # Company header formatting - GREEN background with BLACK text
+        batch_requests.append({
+            'range': f'A1:{chr(64 + total_cols)}1',
+            'format': {
+                'backgroundColor': {'red': 0.2, 'green': 0.6, 'blue': 0.2},  # GREEN
+                'textFormat': {'bold': True, 'fontSize': 18, 'foregroundColor': {'red': 0, 'green': 0, 'blue': 0}},  # BLACK
+                'horizontalAlignment': 'CENTER',
+                'verticalAlignment': 'MIDDLE'
+            }
+        })
+        print(f"📋 Queuing company header formatting")
+        
+        # First, merge cells for headers and underlines (must be done before formatting)
+        for insurance_type in ["property", "general_liability", "liquor"]:
+            if insurance_type not in section_starts:
+                continue
+            
+            header_row = section_starts[insurance_type]
+            header_range = f'A{header_row}:{chr(64 + total_cols)}{header_row}'
+            sheet.merge_cells(header_range)
+            print(f"  Merged header cells: {header_range}")
+            
+            underline_row = header_row + 1
+            underline_range = f'A{underline_row}:{chr(64 + total_cols)}{underline_row}'
+            sheet.merge_cells(underline_range)
+            print(f"  Merged underline cells: {underline_range}")
+        
+        # Now build formatting requests
+        for insurance_type in ["property", "general_liability", "liquor"]:
+            if insurance_type not in section_starts:
+                print(f"Skipping {insurance_type} - not found in sheet")
+                continue
+            
+            header_row = section_starts[insurance_type]
+            end_row = section_ends[insurance_type]
+            last_col = total_cols - 1  # 0-indexed for API
+            
+            print(f"📋 Queuing {insurance_type} section (rows {header_row}-{end_row})")
+            
+            # Main header (coverage type) - BLACK background with white text
+            batch_requests.append({
+                'range': f'A{header_row}:{chr(64 + total_cols)}{header_row}',
+                'format': {
+                    'backgroundColor': {'red': 0.15, 'green': 0.15, 'blue': 0.15},
+                    'textFormat': {'bold': True, 'fontSize': 16, 'foregroundColor': {'red': 1, 'green': 1, 'blue': 1}},
+                    'horizontalAlignment': 'CENTER'
+                }
+            })
+            
+            # Underline row
+            underline_row = header_row + 1
+            batch_requests.append({
+                'range': f'A{underline_row}:{chr(64 + total_cols)}{underline_row}',
+                'format': {
+                    'borders': {'bottom': {'style': 'SOLID', 'width': 3, 'color': {'red': 0.7, 'green': 0.7, 'blue': 0.7}}}
+                }
+            })
+            
+            # Column headers (Field Name, LLM Value, Source Page) - Light gray
+            col_header_row = header_row + 3
+            batch_requests.append({
+                'range': f'A{col_header_row}:{chr(64 + total_cols)}{col_header_row}',
+                'format': {
+                    'backgroundColor': {'red': 0.9, 'green': 0.9, 'blue': 0.9},
+                    'textFormat': {'bold': True, 'fontSize': 12},
+                    'borders': {
+                        'top': {'style': 'SOLID', 'width': 1, 'color': {'red': 0.7, 'green': 0.7, 'blue': 0.7}},
+                        'bottom': {'style': 'SOLID', 'width': 1, 'color': {'red': 0.7, 'green': 0.7, 'blue': 0.7}},
+                        'left': {'style': 'SOLID', 'width': 1, 'color': {'red': 0.7, 'green': 0.7, 'blue': 0.7}},
+                        'right': {'style': 'SOLID', 'width': 1, 'color': {'red': 0.7, 'green': 0.7, 'blue': 0.7}}
+                    },
+                    'horizontalAlignment': 'CENTER'
+                }
+            })
+            
+            # Data rows - ONLY borders and light gray on Column A (Field Name)
+            data_start = col_header_row + 1
+            batch_requests.append({
+                'range': f'A{data_start}:A{end_row}',
+                'format': {
+                    'backgroundColor': {'red': 0.95, 'green': 0.95, 'blue': 0.95},
+                    'borders': {
+                        'top': {'style': 'SOLID', 'width': 1, 'color': {'red': 0.8, 'green': 0.8, 'blue': 0.8}},
+                        'bottom': {'style': 'SOLID', 'width': 1, 'color': {'red': 0.8, 'green': 0.8, 'blue': 0.8}},
+                        'left': {'style': 'SOLID', 'width': 1, 'color': {'red': 0.8, 'green': 0.8, 'blue': 0.8}},
+                        'right': {'style': 'SOLID', 'width': 1, 'color': {'red': 0.8, 'green': 0.8, 'blue': 0.8}}
+                    }
+                }
+            })
+            
+            # Data rows in other columns - NO formatting (explicitly white/clean)
+            other_cols_range = f'B{data_start}:{chr(64 + total_cols)}{end_row}'
+            batch_requests.append({
+                'range': other_cols_range,
+                'format': {
+                    'backgroundColor': {'red': 1, 'green': 1, 'blue': 1}  # White background
+                }
+            })
+        
+        # Execute ALL formatting in a single API call
+        print(f"🚀 Executing {len(batch_requests)} formatting requests in 1 API call...")
+        sheet.batch_format(batch_requests)
+        
+        print("✅ Applied professional formatting to ALL sections in 1 API call!")
+    
+    except Exception as e:
+        print(f"❌ Error applying formatting: {e}")
+        import traceback
+        traceback.print_exc()
+
 def push_master_to_sheets(carriers):
     """Push master multi-carrier data to Google Sheets with stacked output"""
     import gspread
@@ -619,6 +803,9 @@ def push_master_to_sheets(carriers):
     # 6. PREPARE STACKED DATA
     all_rows = []
     
+    # Add company header as first row
+    all_rows.append(["Mckinney & Co. Insurance"])
+    
     # Process each insurance type
     for insurance_type in insurance_types:
         coverage_type_names = {
@@ -687,13 +874,16 @@ def push_master_to_sheets(carriers):
         print(f"✅ Pushed {len(all_rows)} rows to Google Sheets!")
         print(f"✅ Insurance Types: {len(insurance_types)}")
         print(f"✅ Carriers: {len(carriers)}")
-        
+
+        # 8. APPLY PROFESSIONAL FORMATTING
+        apply_sheets_formatting(sheet, len(all_rows), len(header), insurance_types, carriers)
+
         print("\n" + "=" * 80)
         print("MASTER GOOGLE SHEETS INTEGRATION COMPLETE!")
         print("=" * 80)
         print("Check your Google Sheet: Insurance Fields Data")
         print("Format: Stacked sections for Property, General Liability, and Liquor")
-        
+
         return True
     except Exception as e:
         print(f"❌ Error pushing to Google Sheets: {e}")
