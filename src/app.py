@@ -63,8 +63,8 @@ def copy_files_to_pdf_directory():
     for filename in os.listdir(pdf_dir):
         if filename.endswith('.pdf'):
             # Check if it matches carrier file pattern: {name}_{type}.pdf
-            # where type is property, gl, or liquor
-            if '_property.pdf' in filename or '_gl.pdf' in filename or '_liquor.pdf' in filename:
+            # where type is property, gl, liquor, or workers_compensation
+            if '_property.pdf' in filename or '_gl.pdf' in filename or '_liquor.pdf' in filename or '_workers_compensation.pdf' in filename:
                 files_to_delete.append(filename)
 
     # Delete old files
@@ -142,7 +142,7 @@ def run_multi_carrier_pipeline():
 
             # Process each carrier using the standard multi_carrier_master approach
             all_results = {}
-            insurance_types = ["property", "general_liability", "liquor"]
+            insurance_types = ["property", "general_liability", "liquor", "workers_compensation"]
 
             for carrier_name, carrier_info in carriers_data.items():
                 print(f"\n{'='*60}")
@@ -154,7 +154,8 @@ def run_multi_carrier_pipeline():
                     'name': carrier_name,
                     'property': carrier_info.get('property', {}),
                     'general_liability': carrier_info.get('general_liability', {}),
-                    'liquor': carrier_info.get('liquor', {})
+                    'liquor': carrier_info.get('liquor', {}),
+                    'workers_compensation': carrier_info.get('workers_compensation', {})
                 }
 
                 all_results[carrier_name] = {}
@@ -230,7 +231,7 @@ def organize_uploaded_files_for_pipeline():
 
         # Parse filename to extract carrier name and insurance type
         # Expected format: {carrier_name}_{type}.pdf
-        # Types can be: 'property', 'general_liability', 'liquor'
+        # Types can be: 'property', 'general_liability', 'liquor', 'workers_compensation'
         # So we need to check which type it ends with
         
         if filename.endswith('_property.pdf'):
@@ -242,6 +243,9 @@ def organize_uploaded_files_for_pipeline():
         elif filename.endswith('_liquor.pdf'):
             carrier_name = filename.replace('_liquor.pdf', '')
             insurance_type = 'liquor'
+        elif filename.endswith('_workers_compensation.pdf'):
+            carrier_name = filename.replace('_workers_compensation.pdf', '')
+            insurance_type = 'workers_compensation'
         elif filename.endswith('_gl.pdf'):
             # Also support the old 'gl' format for backward compatibility
             carrier_name = filename.replace('_gl.pdf', '')
@@ -253,7 +257,8 @@ def organize_uploaded_files_for_pipeline():
         type_mapping = {
             'property': 'property',
             'general_liability': 'general_liability',
-            'liquor': 'liquor'
+            'liquor': 'liquor',
+            'workers_compensation': 'workers_compensation'
         }
 
         if insurance_type in type_mapping:
@@ -303,7 +308,7 @@ def upload_files():
 
         # Get all form data and organize by carrier
         carriers_data = {}
-        insurance_types = ['property', 'general_liability', 'liquor']
+        insurance_types = ['property', 'general_liability', 'liquor', 'workers_compensation']
         files_processed = 0
 
         # Iterate through all carriers in the form
@@ -328,11 +333,12 @@ def upload_files():
             # Process each insurance type for this carrier
             for insurance_type in insurance_types:
                 # Map insurance type names to form field names
-                # 'general_liability' → 'gl', 'property' → 'property', 'liquor' → 'liquor'
+                # 'general_liability' → 'gl', 'property' → 'property', 'liquor' → 'liquor', 'workers_compensation' → 'workers_compensation'
                 field_type_map = {
                     'property': 'property',
                     'general_liability': 'gl',
-                    'liquor': 'liquor'
+                    'liquor': 'liquor',
+                    'workers_compensation': 'workers_compensation'
                 }
                 form_type = field_type_map.get(insurance_type, insurance_type)
                 file_field_name = f'{form_type}_file_{carrier_index}'
@@ -463,6 +469,7 @@ def upload_files():
             .form-section.property { border-left-color: #e74c3c; }
             .form-section.gl { border-left-color: #f39c12; }
             .form-section.liquor { border-left-color: #9b59b6; }
+            .form-section.workers-compensation { border-left-color: #16a085; }
 
             .form-section h2 {
                 font-size: 1.5rem;
@@ -627,6 +634,7 @@ def upload_files():
             .property .insurance-icon::before { content: '🏠'; }
             .gl .insurance-icon::before { content: '🛡️'; }
             .liquor .insurance-icon::before { content: '🍷'; }
+            .workers-compensation .insurance-icon::before { content: '👷'; }
 
             .carriers-container {
                 margin: 20px 0;
@@ -888,6 +896,30 @@ def upload_files():
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Workers Compensation Insurance -->
+                            <div class="form-section workers-compensation">
+                                <h3><span class="insurance-icon"></span>Workers Compensation Insurance</h3>
+                                <div class="form-group">
+                                    <label for="workers_compensation_file_0">Upload Workers Compensation PDF:</label>
+                                    <div class="file-upload">
+                                        <input type="file" id="workers_compensation_file_0" name="workers_compensation_file_0" accept=".pdf" onchange="updateFileStatus(0, 'workers_compensation')">
+                                        <label for="workers_compensation_file_0" class="file-upload-label">
+                                            📁 Drop your Workers Compensation PDF here or click to browse
+                                        </label>
+                                    </div>
+                                    <div id="workers_compensation_file_status_0" class="file-status" style="display: none;">
+                                        <span class="file-info">
+                                            <span class="file-icon">📁</span>
+                                            <span class="file-details">
+                                                <span class="file-name">No file selected</span>
+                                                <span class="file-size">0 bytes</span>
+                                            </span>
+                                        </span>
+                                        <button type="button" class="cancel-file-btn" onclick="clearFileInput(0, 'workers_compensation')">✗</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -993,6 +1025,30 @@ def upload_files():
                             </div>
                         </div>
                     </div>
+
+                    <!-- Workers Compensation Insurance -->
+                    <div class="form-section workers-compensation">
+                        <h3><span class="insurance-icon"></span>Workers Compensation Insurance</h3>
+                        <div class="form-group">
+                            <label for="workers_compensation_file_${carrierIndex}">Upload Workers Compensation PDF:</label>
+                            <div class="file-upload">
+                                <input type="file" id="workers_compensation_file_${carrierIndex}" name="workers_compensation_file_${carrierIndex}" accept=".pdf" onchange="updateFileStatus(${carrierIndex}, 'workers_compensation')">
+                                <label for="workers_compensation_file_${carrierIndex}" class="file-upload-label">
+                                    Drop your Workers Compensation PDF here or click to browse
+                                </label>
+                            </div>
+                            <div id="workers_compensation_file_status_${carrierIndex}" class="file-status" style="display: none;">
+                                <span class="file-info">
+                                    <span class="file-icon">📁</span>
+                                    <span class="file-details">
+                                        <span class="file-name">No file selected</span>
+                                        <span class="file-size">0 bytes</span>
+                                    </span>
+                                </span>
+                                <button type="button" class="cancel-file-btn" onclick="clearFileInput(${carrierIndex}, 'workers_compensation')">✗</button>
+                            </div>
+                        </div>
+                    </div>
                 `;
 
                 carriersContainer.appendChild(newCarrierBlock);
@@ -1030,6 +1086,11 @@ def upload_files():
                         liquorFileInput.id = `liquor_file_${i}`;
                         liquorFileInput.name = `liquor_file_${i}`;
                     }
+                    const workersCompensationFileInput = block.querySelector(`input[name^="workers_compensation_file_"]`);
+                    if (workersCompensationFileInput) {
+                        workersCompensationFileInput.id = `workers_compensation_file_${i}`;
+                        workersCompensationFileInput.name = `workers_compensation_file_${i}`;
+                    }
                     // Update file status divs
                     const propertyStatusDiv = block.querySelector(`#property_file_status_${i}`);
                     if (propertyStatusDiv) {
@@ -1043,6 +1104,10 @@ def upload_files():
                     if (liquorStatusDiv) {
                         liquorStatusDiv.style.display = 'none';
                     }
+                    const workersCompensationStatusDiv = block.querySelector(`#workers_compensation_file_status_${i}`);
+                    if (workersCompensationStatusDiv) {
+                        workersCompensationStatusDiv.style.display = 'none';
+                    }
                     // Update remove button
                     const removeBtn = block.querySelector('.remove-carrier-btn');
                     if (removeBtn) {
@@ -1054,7 +1119,7 @@ def upload_files():
 
             function updateFileStatus(carrierIndex, insuranceType) {
                 // Map general_liability to gl for form field names
-                const fieldMap = {'property': 'property', 'general_liability': 'gl', 'liquor': 'liquor'};
+                const fieldMap = {'property': 'property', 'general_liability': 'gl', 'liquor': 'liquor', 'workers_compensation': 'workers_compensation'};
                 const fieldType = fieldMap[insuranceType] || insuranceType;
                 
                 const fileInput = document.getElementById(`${fieldType}_file_${carrierIndex}`);
@@ -1073,7 +1138,7 @@ def upload_files():
 
             function clearFileInput(carrierIndex, insuranceType) {
                 // Map general_liability to gl
-                const fieldMap = {'property': 'property', 'general_liability': 'gl', 'liquor': 'liquor'};
+                const fieldMap = {'property': 'property', 'general_liability': 'gl', 'liquor': 'liquor', 'workers_compensation': 'workers_compensation'};
                 const fieldType = fieldMap[insuranceType] || insuranceType;
                 
                 const fileInput = document.getElementById(`${fieldType}_file_${carrierIndex}`);
