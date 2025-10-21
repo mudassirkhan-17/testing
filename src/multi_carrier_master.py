@@ -35,10 +35,11 @@ from A_phase2c_smart_selection import read_pymupdf_clean_pages, read_ocr_all_pag
 # Import Phase 2D functions
 from A_phase2d_intelligent_combining import create_intelligent_combined_file
 
-# Import Phase 3 functions for all three insurance types
+# Import Phase 3 functions for all four insurance types
 from A_phase3_llm_extraction import read_combined_file, create_chunks, extract_with_llm, merge_extraction_results, save_extraction_results, create_final_validated_fields
 from A_phase3_llm_GeneralLiability import read_combined_file as read_gl_combined_file, create_chunks as create_gl_chunks, extract_with_llm as extract_gl_with_llm, merge_extraction_results as merge_gl_extraction_results, save_extraction_results as save_gl_extraction_results, create_final_validated_fields as create_gl_final_validated_fields
 from A_phase3_llm_Liqour import read_combined_file as read_liq_combined_file, create_chunks as create_liq_chunks, extract_with_llm as extract_liq_with_llm, merge_extraction_results as merge_liq_extraction_results, save_extraction_results as save_liq_extraction_results, create_final_validated_fields as create_liq_final_validated_fields
+from A_phase3_llm_worker import read_combined_file as read_worker_combined_file, create_chunks as create_worker_chunks, extract_with_llm as extract_worker_with_llm, merge_extraction_results as merge_worker_extraction_results, save_extraction_results as save_worker_extraction_results, create_final_validated_fields as create_worker_final_validated_fields
 
 # Import Phase 4 functions
 from A_phase5_simple_sheets import push_to_sheets
@@ -88,12 +89,12 @@ def get_carrier_setup():
                 break
             print("Please enter a valid carrier name")
         
-        # Get PDF selections for all three insurance types
+        # Get PDF selections for all four insurance types
         print(f"\nPDF Selection for {carrier_name}:")
-        print("You need to select 3 PDFs - one for each insurance type:")
+        print("You need to select 4 PDFs - one for each insurance type:")
         
         carrier_pdfs = {}
-        insurance_types = ["Property", "General Liability", "Liquor"]
+        insurance_types = ["Property", "General Liability", "Liquor", "Workers Compensation"]
         
         for insurance_type in insurance_types:
             selected_pdf, pdf_path = get_user_pdf_selection(pdf_files, insurance_type)
@@ -106,7 +107,8 @@ def get_carrier_setup():
             'name': carrier_name,
             'property': carrier_pdfs['property'],
             'general_liability': carrier_pdfs['general_liability'],
-            'liquor': carrier_pdfs['liquor']
+            'liquor': carrier_pdfs['liquor'],
+            'workers_compensation': carrier_pdfs['workers_compensation']
         })
     
     print(f"\nCarriers setup complete!")
@@ -120,10 +122,13 @@ def process_carrier_insurance_type(carrier, insurance_type, pdf_info):
     
     # Store original directory
     original_dir = os.getcwd()
-    
+    print(f"DEBUG: original_dir in process_carrier_insurance_type: {original_dir}")
+
     try:
         # Change to property directory (one level up from src/)
         property_dir = os.path.join(original_dir, "..")
+        print(f"DEBUG: calculated property_dir: {property_dir}")
+        print(f"DEBUG: property_dir exists: {os.path.exists(property_dir)}")
         os.chdir(property_dir)
         print(f"Changed to directory: {os.getcwd()}")
         
@@ -227,6 +232,12 @@ def process_carrier_insurance_type(carrier, insurance_type, pdf_info):
                     merge_func = merge_liq_extraction_results
                     save_func = save_liq_extraction_results
                     create_func = create_liq_final_validated_fields
+                elif insurance_type == "workers_compensation":
+                    chunks = create_worker_chunks(pages_list, chunk_size=4)
+                    extract_func = extract_worker_with_llm
+                    merge_func = merge_worker_extraction_results
+                    save_func = save_worker_extraction_results
+                    create_func = create_worker_final_validated_fields
                 
                 all_results = []
                 for chunk in chunks:
@@ -546,6 +557,219 @@ def create_carrier_final_validated_fields(carrier_name, insurance_type, merged_r
     
     print(f"✅ Created carrier final validated fields: {final_file}")
 
+def apply_sheets_formatting(sheet, total_rows, total_cols, insurance_types, carriers):
+    """Apply professional formatting to the Google Sheet in a SINGLE API CALL"""
+    try:
+        print("🎨 Applying professional formatting to Google Sheets (SINGLE BATCH CALL)...")
+        
+        # Merge company header row (only if not already merged)
+        company_header_range = f'A1:{chr(64 + total_cols)}1'
+        try:
+            sheet.merge_cells(company_header_range)
+            print(f"  Merged company header cells: {company_header_range}")
+        except Exception as e:
+            print(f"  Company header already merged or merge failed: {e}")
+        
+        # Get all sheet values to find actual section boundaries
+        all_values = sheet.get_all_values()
+        
+        # Find sections by looking for section headers
+        section_starts = {}
+        section_ends = {}
+        
+        for row_idx, row in enumerate(all_values):
+            if row and len(row) > 0:
+                cell_value = str(row[0]).strip()
+                
+                if "Property Coverages" in cell_value:
+                    section_starts["property"] = row_idx + 1
+                    print(f"Found Property Coverages section at row {section_starts['property']}")
+                    
+                elif "General Liability Coverages" in cell_value:
+                    section_starts["general_liability"] = row_idx + 1
+                    print(f"Found General Liability Coverages section at row {section_starts['general_liability']}")
+                    
+                elif "Liquor Coverages" in cell_value:
+                    section_starts["liquor"] = row_idx + 1
+                    print(f"Found Liquor Coverages section at row {section_starts['liquor']}")
+                    
+                elif "Workers Compensation Coverages" in cell_value:
+                    section_starts["workers_compensation"] = row_idx + 1
+                    print(f"Found Workers Compensation Coverages section at row {section_starts['workers_compensation']}")
+        
+        # Calculate section ends
+        sorted_starts = sorted([(k, v) for k, v in section_starts.items()], key=lambda x: x[1])
+        for idx in range(len(sorted_starts)):
+            insurance_type, start_row = sorted_starts[idx]
+            col_header_row = start_row + 3
+            
+            if idx < len(sorted_starts) - 1:
+                # For non-last sections, scan backwards from next section to find last data row
+                next_section_header = sorted_starts[idx + 1][1]
+                end_row = col_header_row  # Default
+                
+                # Scan backwards from the next section header, but stop at empty spacer rows
+                for row_idx in range(next_section_header - 1, col_header_row, -1):
+                    row = all_values[row_idx - 1] if row_idx - 1 < len(all_values) else []  # Convert to 0-indexed
+                    # Check if first column has data
+                    if row and len(row) > 0 and str(row[0]).strip():
+                        end_row = row_idx  # Found last data row
+                        break
+                    elif row_idx == col_header_row + 1:
+                        # If we're at the first data row and it's empty, don't format it
+                        break
+            else:
+                # For last section, find the actual last row with data
+                end_row = col_header_row  # Default to column header row
+                
+                # Scan down to find last row with data in first column
+                for row_idx in range(col_header_row + 1, len(all_values)):
+                    row = all_values[row_idx] if row_idx < len(all_values) else []
+                    # Check if first column has data
+                    if row and len(row) > 0 and str(row[0]).strip():
+                        end_row = row_idx + 1  # Convert to 1-indexed
+                    elif end_row > col_header_row:
+                        # We found data before, now it's empty - stop here to avoid formatting empty rows
+                        break
+            
+            section_ends[insurance_type] = end_row
+            print(f"{insurance_type}: rows {start_row} to {end_row}")
+        
+        # Build batch format requests - ALL formatting in ONE API call
+        batch_requests = []
+        
+        # Company header formatting - GREEN background with BLACK text
+        batch_requests.append({
+            'range': f'A1:{chr(64 + total_cols)}1',
+            'format': {
+                'backgroundColor': {'red': 0.2, 'green': 0.6, 'blue': 0.2},  # GREEN
+                'textFormat': {'bold': True, 'fontSize': 18, 'foregroundColor': {'red': 0, 'green': 0, 'blue': 0}},  # BLACK
+                'horizontalAlignment': 'CENTER',
+                'verticalAlignment': 'MIDDLE'
+            }
+        })
+        print(f"📋 Queuing company header formatting")
+        
+        # Build formatting requests first (merge cells after formatting)
+        for insurance_type in ["property", "general_liability", "liquor", "workers_compensation"]:
+            if insurance_type not in section_starts:
+                print(f"Skipping {insurance_type} - not found in sheet")
+                continue
+            
+            header_row = section_starts[insurance_type]
+            end_row = section_ends[insurance_type]
+            last_col = total_cols - 1  # 0-indexed for API
+            
+            print(f"📋 Queuing {insurance_type} section (rows {header_row}-{end_row})")
+            
+            # Main header (coverage type) - BLACK background with white text
+            batch_requests.append({
+                'range': f'A{header_row}:{chr(64 + total_cols)}{header_row}',
+                'format': {
+                    'backgroundColor': {'red': 0.15, 'green': 0.15, 'blue': 0.15},
+                    'textFormat': {'bold': True, 'fontSize': 16, 'foregroundColor': {'red': 1, 'green': 1, 'blue': 1}},
+                    'horizontalAlignment': 'CENTER'
+                }
+            })
+            
+            # Underline row
+            underline_row = header_row + 1
+            batch_requests.append({
+                'range': f'A{underline_row}:{chr(64 + total_cols)}{underline_row}',
+                'format': {
+                    'borders': {'bottom': {'style': 'SOLID', 'width': 3, 'color': {'red': 0.7, 'green': 0.7, 'blue': 0.7}}}
+                }
+            })
+            
+            # Column headers (Field Name, LLM Value, Source Page) - Light gray
+            col_header_row = header_row + 3
+            batch_requests.append({
+                'range': f'A{col_header_row}:{chr(64 + total_cols)}{col_header_row}',
+                'format': {
+                    'backgroundColor': {'red': 0.9, 'green': 0.9, 'blue': 0.9},
+                    'textFormat': {'bold': True, 'fontSize': 12},
+                    'borders': {
+                        'top': {'style': 'SOLID', 'width': 1, 'color': {'red': 0.7, 'green': 0.7, 'blue': 0.7}},
+                        'bottom': {'style': 'SOLID', 'width': 1, 'color': {'red': 0.7, 'green': 0.7, 'blue': 0.7}},
+                        'left': {'style': 'SOLID', 'width': 1, 'color': {'red': 0.7, 'green': 0.7, 'blue': 0.7}},
+                        'right': {'style': 'SOLID', 'width': 1, 'color': {'red': 0.7, 'green': 0.7, 'blue': 0.7}}
+                    },
+                    'horizontalAlignment': 'CENTER'
+                }
+            })
+            
+            # Data rows - ONLY borders and light gray on Column A (Field Name)
+            data_start = col_header_row + 1
+            batch_requests.append({
+                'range': f'A{data_start}:A{end_row}',
+                'format': {
+                    'backgroundColor': {'red': 0.95, 'green': 0.95, 'blue': 0.95},
+                    'borders': {
+                        'top': {'style': 'SOLID', 'width': 1, 'color': {'red': 0.8, 'green': 0.8, 'blue': 0.8}},
+                        'bottom': {'style': 'SOLID', 'width': 1, 'color': {'red': 0.8, 'green': 0.8, 'blue': 0.8}},
+                        'left': {'style': 'SOLID', 'width': 1, 'color': {'red': 0.8, 'green': 0.8, 'blue': 0.8}},
+                        'right': {'style': 'SOLID', 'width': 1, 'color': {'red': 0.8, 'green': 0.8, 'blue': 0.8}}
+                    }
+                }
+            })
+            
+            # Data rows in other columns - NO formatting (explicitly white/clean)
+            other_cols_range = f'B{data_start}:{chr(64 + total_cols)}{end_row}'
+            batch_requests.append({
+                'range': other_cols_range,
+                'format': {
+                    'backgroundColor': {'red': 1, 'green': 1, 'blue': 1}  # White background
+                }
+            })
+            
+            # Ensure empty spacer rows between sections stay white
+            if end_row < len(all_values):
+                spacer_start = end_row + 1
+                spacer_end = min(spacer_start + 2, len(all_values))  # Format next 2 rows as spacers
+                if spacer_start <= spacer_end:
+                    spacer_range = f'A{spacer_start}:{chr(64 + total_cols)}{spacer_end}'
+                    batch_requests.append({
+                        'range': spacer_range,
+                        'format': {
+                            'backgroundColor': {'red': 1, 'green': 1, 'blue': 1}  # White background
+                        }
+                    })
+        
+        # Execute ALL formatting in a single API call
+        print(f"🚀 Executing {len(batch_requests)} formatting requests in 1 API call...")
+        sheet.batch_format(batch_requests)
+        
+        print("✅ Applied professional formatting to ALL sections in 1 API call!")
+        
+        # Now merge cells for headers and underlines (after formatting)
+        print("🔗 Merging cells for headers and underlines...")
+        for insurance_type in ["property", "general_liability", "liquor", "workers_compensation"]:
+            if insurance_type not in section_starts:
+                continue
+            
+            header_row = section_starts[insurance_type]
+            header_range = f'A{header_row}:{chr(64 + total_cols)}{header_row}'
+            try:
+                sheet.merge_cells(header_range)
+                print(f"  ✅ Merged header cells: {header_range}")
+            except Exception as e:
+                print(f"  ⚠️  Header already merged or merge failed: {e}")
+            
+            underline_row = header_row + 1
+            underline_range = f'A{underline_row}:{chr(64 + total_cols)}{underline_row}'
+            try:
+                sheet.merge_cells(underline_range)
+                print(f"  ✅ Merged underline cells: {underline_range}")
+            except Exception as e:
+                print(f"  ⚠️  Underline already merged or merge failed: {e}")
+        
+        print("✅ All cell merging completed!")
+    
+    except Exception as e:
+        print(f"❌ Error applying formatting: {e}")
+        import traceback
+        traceback.print_exc()
+
 def push_master_to_sheets(carriers):
     """Push master multi-carrier data to Google Sheets with stacked output"""
     import gspread
@@ -563,23 +787,29 @@ def push_master_to_sheets(carriers):
         results_dir = 'results'
         config_dir = 'config'
     
-    # 2. LOAD ALL CARRIER DATA FOR PROPERTY AND LIQUOR ONLY
+    # 2. LOAD ONLY CARRIER DATA FOR INSURANCE TYPES THAT WERE ACTUALLY PROCESSED
     all_carrier_data = {}
-    insurance_types = ["property", "general_liability", "liquor"]
+    insurance_types = ["property", "general_liability", "liquor", "workers_compensation"]
     
     for carrier in carriers:
         carrier_name = carrier['name']
         all_carrier_data[carrier_name] = {}
         
+        # Only load data for insurance types that have PDF files (were actually processed)
         for insurance_type in insurance_types:
-            data_file = f"{results_dir}/{carrier_name}_{insurance_type}_final_validated_fields.json"
-            
-            if os.path.exists(data_file):
-                with open(data_file, 'r', encoding='utf-8') as f:
-                    all_carrier_data[carrier_name][insurance_type] = json.load(f)
-                print(f"✅ Loaded {insurance_type} data for {carrier_name}: {len(all_carrier_data[carrier_name][insurance_type])} fields")
+            # Check if this insurance type has a PDF file (was processed)
+            if insurance_type in carrier and carrier[insurance_type].get('pdf_file'):
+                data_file = f"{results_dir}/{carrier_name}_{insurance_type}_final_validated_fields.json"
+                
+                if os.path.exists(data_file):
+                    with open(data_file, 'r', encoding='utf-8') as f:
+                        all_carrier_data[carrier_name][insurance_type] = json.load(f)
+                    print(f"✅ Loaded {insurance_type} data for {carrier_name}: {len(all_carrier_data[carrier_name][insurance_type])} fields")
+                else:
+                    print(f"❌ No {insurance_type} data file found for {carrier_name}: {data_file}")
+                    all_carrier_data[carrier_name][insurance_type] = {}
             else:
-                print(f"❌ No {insurance_type} data file found for {carrier_name}: {data_file}")
+                print(f"⏭️  Skipping {insurance_type} for {carrier_name} (no PDF uploaded)")
                 all_carrier_data[carrier_name][insurance_type] = {}
     
     # 3. SETUP GOOGLE SHEETS
@@ -619,12 +849,16 @@ def push_master_to_sheets(carriers):
     # 6. PREPARE STACKED DATA
     all_rows = []
     
+    # Add company header as first row
+    all_rows.append(["Mckinney & Co. Insurance"])
+    
     # Process each insurance type
     for insurance_type in insurance_types:
         coverage_type_names = {
             "property": "Property Coverages",
             "general_liability": "General Liability Coverages",
-            "liquor": "Liquor Coverages"
+            "liquor": "Liquor Coverages",
+            "workers_compensation": "Workers Compensation Coverages"
         }
         
         coverage_type = coverage_type_names[insurance_type]
@@ -647,7 +881,43 @@ def push_master_to_sheets(carriers):
             if insurance_type in all_carrier_data[carrier_name]:
                 all_fields.update(all_carrier_data[carrier_name][insurance_type].keys())
         
-        # Get fields in original order from first carrier's data
+        # ALWAYS include standard fields for each insurance type, even if no data
+        standard_fields = {
+            "property": [
+                "Construction Type", "Valuation and Coinsurance", "Cosmetic Damage", "Building", 
+                "Pumps", "Canopy", "ROOF EXCLUSION", "Roof Surfacing", "Roof Surfacing -Limitation",
+                "Business Personal Property", "Business Income", "Business Income with Extra Expense",
+                "Equipment Breakdown", "Outdoor Signs", "Signs Within 1,000 Feet to Premises",
+                "Employee Dishonesty", "Money & Securities", "Money and Securities (Inside; Outside)",
+                "Spoilage", "Theft", "Theft Sublimit", "Theft Deductible", "Windstorm or Hail",
+                "Named Storm Deductible", "Wind and Hail and Named Storm exclusion", 
+                "All Other Perils Deductible", "Fire Station Alarm", "Burglar Alarm", "Terrorism",
+                "Protective Safeguards Requirements", "Minimum Earned Premium (MEP)"
+            ],
+            "general_liability": [
+                "General Aggregate Limit", "Products-Completed Operations Aggregate Limit",
+                "Personal and Advertising Injury Limit", "Each Occurrence Limit", "Damage to Premises Rented to You",
+                "Medical Expenses Limit", "Fire Damage Legal Liability", "Tenant's Legal Liability",
+                "Liquor Liability", "Host Liquor Liability", "Employment Practices Liability",
+                "Sexual Abuse and Molestation", "Professional Liability", "Cyber Liability",
+                "Directors and Officers Liability", "Employment Practices Liability", "Workers Compensation",
+                "Employers Liability", "Stop Gap Coverage", "Minimum Earned Premium (MEP)"
+            ],
+            "liquor": [
+                "Liquor Liability Limit", "Host Liquor Liability Limit", "Liquor Liability Deductible",
+                "Host Liquor Liability Deductible", "Assault and Battery Coverage", "Minimum Earned Premium (MEP)"
+            ],
+            "workers_compensation": [
+                "Limits", "FEIN #", "Payroll - Subject to Audit", 
+                "Excluded Officer", "If Opting out from Workers Compensation Coverage"
+            ]
+        }
+        
+        # Add standard fields to ensure they're always present
+        if insurance_type in standard_fields:
+            all_fields.update(standard_fields[insurance_type])
+        
+        # Get fields in original order from first carrier's data, or use standard order
         sorted_fields = []
         for carrier in carriers:
             carrier_name = carrier['name']
@@ -656,6 +926,10 @@ def push_master_to_sheets(carriers):
                     if field_name not in sorted_fields:
                         sorted_fields.append(field_name)
                 break  # Only use first carrier's order
+        
+        # If no data exists, use standard field order
+        if not sorted_fields and insurance_type in standard_fields:
+            sorted_fields = standard_fields[insurance_type]
         
         # Create data rows for this insurance type
         for field_name in sorted_fields:
@@ -687,13 +961,16 @@ def push_master_to_sheets(carriers):
         print(f"✅ Pushed {len(all_rows)} rows to Google Sheets!")
         print(f"✅ Insurance Types: {len(insurance_types)}")
         print(f"✅ Carriers: {len(carriers)}")
-        
+
+        # 8. APPLY PROFESSIONAL FORMATTING
+        apply_sheets_formatting(sheet, len(all_rows), len(header), insurance_types, carriers)
+
         print("\n" + "=" * 80)
         print("MASTER GOOGLE SHEETS INTEGRATION COMPLETE!")
         print("=" * 80)
         print("Check your Google Sheet: Insurance Fields Data")
         print("Format: Stacked sections for Property, General Liability, and Liquor")
-        
+
         return True
     except Exception as e:
         print(f"❌ Error pushing to Google Sheets: {e}")
@@ -772,6 +1049,7 @@ def main():
         print(f"  Property PDF: {carrier['property']['pdf_file']}")
         print(f"  General Liability PDF: {carrier['general_liability']['pdf_file']}")
         print(f"  Liquor PDF: {carrier['liquor']['pdf_file']}")
+        print(f"  Workers Compensation PDF: {carrier['workers_compensation']['pdf_file']}")
     
     print("=" * 80)
     
@@ -781,7 +1059,7 @@ def main():
     print("=" * 80)
     
     all_results = {}
-    insurance_types = ["property", "general_liability", "liquor"]
+    insurance_types = ["property", "general_liability", "liquor", "workers_compensation"]
     
     for carrier in carriers:
         carrier_name = carrier['name']
@@ -820,7 +1098,7 @@ def main():
     if sheets_success:
         print("✅ PHASE 4 COMPLETE: Master data pushed to Google Sheets!")
         print("📊 Check your Google Sheet: Insurance Fields Data")
-        print("📋 Format: Stacked sections for Property, General Liability, and Liquor")
+        print("📋 Format: Stacked sections for Property, General Liability, Liquor, and Workers Compensation")
     else:
         print("❌ PHASE 4 FAILED: Master Google Sheets integration failed")
     

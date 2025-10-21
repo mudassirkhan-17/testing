@@ -131,11 +131,17 @@ def save_results(results):
         'results',  # When run from property/ (via mine.py)
         '../results'  # When run from property/src/ (alone)
     ]
-    
+
+    print(f"DEBUG: Current working directory in save_results: {os.getcwd()}")
+    print(f"DEBUG: Trying results_paths: {results_paths}")
+
     results_dir = None
     for path in results_paths:
+        print(f"DEBUG: Checking path: {path}")
+        print(f"DEBUG: Path exists: {os.path.exists(path)}")
         if os.path.exists(path) or os.path.exists(os.path.dirname(path) if os.path.dirname(path) else '.'):
             results_dir = path
+            print(f"DEBUG: Selected results_dir: {results_dir}")
             break
     
     if not results_dir:
