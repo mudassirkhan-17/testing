@@ -290,6 +290,17 @@ def upload_files():
         print("PROCESSING MULTI-CARRIER UPLOAD")
         print("=" * 60)
 
+        # CLEANUP: Delete old PDF files from uploads first
+        cur_dir = os.path.dirname(os.path.abspath(__file__))
+        up_dir = os.path.join(cur_dir, app.config['UPLOAD_FOLDER'])
+        if os.path.exists(up_dir):
+            for fn in os.listdir(up_dir):
+                if fn.endswith('.pdf'):
+                    try:
+                        os.remove(os.path.join(up_dir, fn))
+                    except:
+                        pass
+
         # Get all form data and organize by carrier
         carriers_data = {}
         insurance_types = ['property', 'general_liability', 'liquor']
@@ -359,6 +370,7 @@ def upload_files():
         print(f"Total Carriers: {len(carriers_data)}")
         print(f"Total Files Processed: {files_processed}")
         print(f"Carriers Data: {carriers_data}")
+        print(f"Request.files keys: {request.files.keys()}") # Added debugging
 
         if files_processed > 0:
             flash(f'✅ Successfully processed {files_processed} file(s) from {len(carriers_data)} carrier(s)!')
@@ -698,6 +710,79 @@ def upload_files():
                 background: white;
                 font-weight: 600;
             }
+
+            .file-status {
+                position: absolute;
+                top: 0;
+                left: 0;
+                padding: 8px 12px;
+                background-color: #e0f2f7;
+                color: #3498db;
+                border-bottom-right-radius: 8px;
+                font-size: 0.85em;
+                font-weight: 600;
+                z-index: 1;
+                display: none; /* Hidden by default */
+            }
+
+            .file-status.active {
+                margin-top: 10px;
+                padding: 12px 16px;
+                background: linear-gradient(135deg, #e8f8f5 0%, #d5f4e6 100%);
+                border-left: 4px solid #27ae60;
+                border-radius: 8px;
+                display: flex !important;
+                justify-content: space-between;
+                align-items: center;
+                position: relative;
+            }
+
+            .file-info {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex: 1;
+            }
+
+            .file-icon {
+                font-size: 1.3em;
+            }
+
+            .file-details {
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+            }
+
+            .file-name {
+                font-weight: 700;
+                color: #27ae60;
+                font-size: 0.95em;
+            }
+
+            .file-size {
+                font-size: 0.8em;
+                color: #7f8c8d;
+            }
+
+            .cancel-file-btn {
+                background: linear-gradient(135deg, #e74c3c, #c0392b);
+                color: white;
+                border: none;
+                padding: 6px 14px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 0.85em;
+                transition: all 0.3s ease;
+                white-space: nowrap;
+                margin-left: 10px;
+            }
+
+            .cancel-file-btn:hover {
+                transform: scale(1.05);
+                box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+            }
         </style>
     </head>
     <body>
@@ -738,10 +823,20 @@ def upload_files():
                                 <div class="form-group">
                                     <label for="property_file_0">Upload Property PDF:</label>
                                     <div class="file-upload">
-                                        <input type="file" id="property_file_0" name="property_file_0" accept=".pdf">
+                                        <input type="file" id="property_file_0" name="property_file_0" accept=".pdf" onchange="updateFileStatus(0, 'property')">
                                         <label for="property_file_0" class="file-upload-label">
-                                            Drop your Property Insurance PDF here or click to browse
+                                            📁 Drop your Property Insurance PDF here or click to browse
                                         </label>
+                                    </div>
+                                    <div id="property_file_status_0" class="file-status" style="display: none;">
+                                        <span class="file-info">
+                                            <span class="file-icon">📁</span>
+                                            <span class="file-details">
+                                                <span class="file-name">No file selected</span>
+                                                <span class="file-size">0 bytes</span>
+                                            </span>
+                                        </span>
+                                        <button type="button" class="cancel-file-btn" onclick="clearFileInput(0, 'property')">✗</button>
                                     </div>
                                 </div>
                             </div>
@@ -752,10 +847,20 @@ def upload_files():
                                 <div class="form-group">
                                     <label for="gl_file_0">Upload General Liability PDF:</label>
                                     <div class="file-upload">
-                                        <input type="file" id="gl_file_0" name="gl_file_0" accept=".pdf">
+                                        <input type="file" id="gl_file_0" name="gl_file_0" accept=".pdf" onchange="updateFileStatus(0, 'general_liability')">
                                         <label for="gl_file_0" class="file-upload-label">
-                                            Drop your General Liability PDF here or click to browse
+                                            📁 Drop your General Liability PDF here or click to browse
                                         </label>
+                                    </div>
+                                    <div id="gl_file_status_0" class="file-status" style="display: none;">
+                                        <span class="file-info">
+                                            <span class="file-icon">📁</span>
+                                            <span class="file-details">
+                                                <span class="file-name">No file selected</span>
+                                                <span class="file-size">0 bytes</span>
+                                            </span>
+                                        </span>
+                                        <button type="button" class="cancel-file-btn" onclick="clearFileInput(0, 'general_liability')">✗</button>
                                     </div>
                                 </div>
                             </div>
@@ -766,10 +871,20 @@ def upload_files():
                                 <div class="form-group">
                                     <label for="liquor_file_0">Upload Liquor PDF:</label>
                                     <div class="file-upload">
-                                        <input type="file" id="liquor_file_0" name="liquor_file_0" accept=".pdf">
+                                        <input type="file" id="liquor_file_0" name="liquor_file_0" accept=".pdf" onchange="updateFileStatus(0, 'liquor')">
                                         <label for="liquor_file_0" class="file-upload-label">
-                                            Drop your Liquor Insurance PDF here or click to browse
+                                            📁 Drop your Liquor Insurance PDF here or click to browse
                                         </label>
+                                    </div>
+                                    <div id="liquor_file_status_0" class="file-status" style="display: none;">
+                                        <span class="file-info">
+                                            <span class="file-icon">📁</span>
+                                            <span class="file-details">
+                                                <span class="file-name">No file selected</span>
+                                                <span class="file-size">0 bytes</span>
+                                            </span>
+                                        </span>
+                                        <button type="button" class="cancel-file-btn" onclick="clearFileInput(0, 'liquor')">✗</button>
                                     </div>
                                 </div>
                             </div>
@@ -813,10 +928,20 @@ def upload_files():
                         <div class="form-group">
                             <label for="property_file_${carrierIndex}">Upload Property PDF:</label>
                             <div class="file-upload">
-                                <input type="file" id="property_file_${carrierIndex}" name="property_file_${carrierIndex}" accept=".pdf">
+                                <input type="file" id="property_file_${carrierIndex}" name="property_file_${carrierIndex}" accept=".pdf" onchange="updateFileStatus(${carrierIndex}, 'property')">
                                 <label for="property_file_${carrierIndex}" class="file-upload-label">
                                     Drop your Property Insurance PDF here or click to browse
                                 </label>
+                            </div>
+                            <div id="property_file_status_${carrierIndex}" class="file-status" style="display: none;">
+                                <span class="file-info">
+                                    <span class="file-icon">📁</span>
+                                    <span class="file-details">
+                                        <span class="file-name">No file selected</span>
+                                        <span class="file-size">0 bytes</span>
+                                    </span>
+                                </span>
+                                <button type="button" class="cancel-file-btn" onclick="clearFileInput(${carrierIndex}, 'property')">✗</button>
                             </div>
                         </div>
                     </div>
@@ -827,10 +952,20 @@ def upload_files():
                         <div class="form-group">
                             <label for="gl_file_${carrierIndex}">Upload General Liability PDF:</label>
                             <div class="file-upload">
-                                <input type="file" id="gl_file_${carrierIndex}" name="gl_file_${carrierIndex}" accept=".pdf">
+                                <input type="file" id="gl_file_${carrierIndex}" name="gl_file_${carrierIndex}" accept=".pdf" onchange="updateFileStatus(${carrierIndex}, 'general_liability')">
                                 <label for="gl_file_${carrierIndex}" class="file-upload-label">
                                     Drop your General Liability PDF here or click to browse
                                 </label>
+                            </div>
+                            <div id="gl_file_status_${carrierIndex}" class="file-status" style="display: none;">
+                                <span class="file-info">
+                                    <span class="file-icon">📁</span>
+                                    <span class="file-details">
+                                        <span class="file-name">No file selected</span>
+                                        <span class="file-size">0 bytes</span>
+                                    </span>
+                                </span>
+                                <button type="button" class="cancel-file-btn" onclick="clearFileInput(${carrierIndex}, 'general_liability')">✗</button>
                             </div>
                         </div>
                     </div>
@@ -841,10 +976,20 @@ def upload_files():
                         <div class="form-group">
                             <label for="liquor_file_${carrierIndex}">Upload Liquor PDF:</label>
                             <div class="file-upload">
-                                <input type="file" id="liquor_file_${carrierIndex}" name="liquor_file_${carrierIndex}" accept=".pdf">
+                                <input type="file" id="liquor_file_${carrierIndex}" name="liquor_file_${carrierIndex}" accept=".pdf" onchange="updateFileStatus(${carrierIndex}, 'liquor')">
                                 <label for="liquor_file_${carrierIndex}" class="file-upload-label">
                                     Drop your Liquor Insurance PDF here or click to browse
                                 </label>
+                            </div>
+                            <div id="liquor_file_status_${carrierIndex}" class="file-status" style="display: none;">
+                                <span class="file-info">
+                                    <span class="file-icon">📁</span>
+                                    <span class="file-details">
+                                        <span class="file-name">No file selected</span>
+                                        <span class="file-size">0 bytes</span>
+                                    </span>
+                                </span>
+                                <button type="button" class="cancel-file-btn" onclick="clearFileInput(${carrierIndex}, 'liquor')">✗</button>
                             </div>
                         </div>
                     </div>
@@ -885,6 +1030,19 @@ def upload_files():
                         liquorFileInput.id = `liquor_file_${i}`;
                         liquorFileInput.name = `liquor_file_${i}`;
                     }
+                    // Update file status divs
+                    const propertyStatusDiv = block.querySelector(`#property_file_status_${i}`);
+                    if (propertyStatusDiv) {
+                        propertyStatusDiv.style.display = 'none';
+                    }
+                    const glStatusDiv = block.querySelector(`#gl_file_status_${i}`);
+                    if (glStatusDiv) {
+                        glStatusDiv.style.display = 'none';
+                    }
+                    const liquorStatusDiv = block.querySelector(`#liquor_file_status_${i}`);
+                    if (liquorStatusDiv) {
+                        liquorStatusDiv.style.display = 'none';
+                    }
                     // Update remove button
                     const removeBtn = block.querySelector('.remove-carrier-btn');
                     if (removeBtn) {
@@ -892,6 +1050,40 @@ def upload_files():
                         removeBtn.setAttribute('onclick', `removeCarrier(${i})`);
                     }
                 });
+            }
+
+            function updateFileStatus(carrierIndex, insuranceType) {
+                // Map general_liability to gl for form field names
+                const fieldMap = {'property': 'property', 'general_liability': 'gl', 'liquor': 'liquor'};
+                const fieldType = fieldMap[insuranceType] || insuranceType;
+                
+                const fileInput = document.getElementById(`${fieldType}_file_${carrierIndex}`);
+                const statusDiv = document.getElementById(`${fieldType}_file_status_${carrierIndex}`);
+                
+                if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    const fileSize = (file.size / 1024).toFixed(2);
+                    statusDiv.innerHTML = `<div class="file-info"><span class="file-icon">✅</span><div class="file-details"><span class="file-name">${file.name}</span><span class="file-size">${fileSize} KB</span></div></div><button type="button" class="cancel-file-btn" onclick="clearFileInput(${carrierIndex}, '${insuranceType}')">✕ Clear</button>`;
+                    statusDiv.classList.add('active');
+                } else if (statusDiv) {
+                    statusDiv.innerHTML = '';
+                    statusDiv.classList.remove('active');
+                }
+            }
+
+            function clearFileInput(carrierIndex, insuranceType) {
+                // Map general_liability to gl
+                const fieldMap = {'property': 'property', 'general_liability': 'gl', 'liquor': 'liquor'};
+                const fieldType = fieldMap[insuranceType] || insuranceType;
+                
+                const fileInput = document.getElementById(`${fieldType}_file_${carrierIndex}`);
+                if (fileInput) fileInput.value = '';
+                
+                const statusDiv = document.getElementById(`${fieldType}_file_status_${carrierIndex}`);
+                if (statusDiv) {
+                    statusDiv.innerHTML = '';
+                    statusDiv.classList.remove('active');
+                }
             }
         </script>
     </body>

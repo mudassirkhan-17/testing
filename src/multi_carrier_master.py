@@ -747,7 +747,7 @@ def push_master_to_sheets(carriers):
         results_dir = 'results'
         config_dir = 'config'
     
-    # 2. LOAD ALL CARRIER DATA FOR PROPERTY AND LIQUOR ONLY
+    # 2. LOAD ONLY CARRIER DATA FOR INSURANCE TYPES THAT WERE ACTUALLY PROCESSED
     all_carrier_data = {}
     insurance_types = ["property", "general_liability", "liquor"]
     
@@ -755,15 +755,21 @@ def push_master_to_sheets(carriers):
         carrier_name = carrier['name']
         all_carrier_data[carrier_name] = {}
         
+        # Only load data for insurance types that have PDF files (were actually processed)
         for insurance_type in insurance_types:
-            data_file = f"{results_dir}/{carrier_name}_{insurance_type}_final_validated_fields.json"
-            
-            if os.path.exists(data_file):
-                with open(data_file, 'r', encoding='utf-8') as f:
-                    all_carrier_data[carrier_name][insurance_type] = json.load(f)
-                print(f"✅ Loaded {insurance_type} data for {carrier_name}: {len(all_carrier_data[carrier_name][insurance_type])} fields")
+            # Check if this insurance type has a PDF file (was processed)
+            if insurance_type in carrier and carrier[insurance_type].get('pdf_file'):
+                data_file = f"{results_dir}/{carrier_name}_{insurance_type}_final_validated_fields.json"
+                
+                if os.path.exists(data_file):
+                    with open(data_file, 'r', encoding='utf-8') as f:
+                        all_carrier_data[carrier_name][insurance_type] = json.load(f)
+                    print(f"✅ Loaded {insurance_type} data for {carrier_name}: {len(all_carrier_data[carrier_name][insurance_type])} fields")
+                else:
+                    print(f"❌ No {insurance_type} data file found for {carrier_name}: {data_file}")
+                    all_carrier_data[carrier_name][insurance_type] = {}
             else:
-                print(f"❌ No {insurance_type} data file found for {carrier_name}: {data_file}")
+                print(f"⏭️  Skipping {insurance_type} for {carrier_name} (no PDF uploaded)")
                 all_carrier_data[carrier_name][insurance_type] = {}
     
     # 3. SETUP GOOGLE SHEETS
@@ -834,7 +840,39 @@ def push_master_to_sheets(carriers):
             if insurance_type in all_carrier_data[carrier_name]:
                 all_fields.update(all_carrier_data[carrier_name][insurance_type].keys())
         
-        # Get fields in original order from first carrier's data
+        # ALWAYS include standard fields for each insurance type, even if no data
+        standard_fields = {
+            "property": [
+                "Construction Type", "Valuation and Coinsurance", "Cosmetic Damage", "Building", 
+                "Pumps", "Canopy", "ROOF EXCLUSION", "Roof Surfacing", "Roof Surfacing -Limitation",
+                "Business Personal Property", "Business Income", "Business Income with Extra Expense",
+                "Equipment Breakdown", "Outdoor Signs", "Signs Within 1,000 Feet to Premises",
+                "Employee Dishonesty", "Money & Securities", "Money and Securities (Inside; Outside)",
+                "Spoilage", "Theft", "Theft Sublimit", "Theft Deductible", "Windstorm or Hail",
+                "Named Storm Deductible", "Wind and Hail and Named Storm exclusion", 
+                "All Other Perils Deductible", "Fire Station Alarm", "Burglar Alarm", "Terrorism",
+                "Protective Safeguards Requirements", "Minimum Earned Premium (MEP)"
+            ],
+            "general_liability": [
+                "General Aggregate Limit", "Products-Completed Operations Aggregate Limit",
+                "Personal and Advertising Injury Limit", "Each Occurrence Limit", "Damage to Premises Rented to You",
+                "Medical Expenses Limit", "Fire Damage Legal Liability", "Tenant's Legal Liability",
+                "Liquor Liability", "Host Liquor Liability", "Employment Practices Liability",
+                "Sexual Abuse and Molestation", "Professional Liability", "Cyber Liability",
+                "Directors and Officers Liability", "Employment Practices Liability", "Workers Compensation",
+                "Employers Liability", "Stop Gap Coverage", "Minimum Earned Premium (MEP)"
+            ],
+            "liquor": [
+                "Liquor Liability Limit", "Host Liquor Liability Limit", "Liquor Liability Deductible",
+                "Host Liquor Liability Deductible", "Assault and Battery Coverage", "Minimum Earned Premium (MEP)"
+            ]
+        }
+        
+        # Add standard fields to ensure they're always present
+        if insurance_type in standard_fields:
+            all_fields.update(standard_fields[insurance_type])
+        
+        # Get fields in original order from first carrier's data, or use standard order
         sorted_fields = []
         for carrier in carriers:
             carrier_name = carrier['name']
@@ -843,6 +881,10 @@ def push_master_to_sheets(carriers):
                     if field_name not in sorted_fields:
                         sorted_fields.append(field_name)
                 break  # Only use first carrier's order
+        
+        # If no data exists, use standard field order
+        if not sorted_fields and insurance_type in standard_fields:
+            sorted_fields = standard_fields[insurance_type]
         
         # Create data rows for this insurance type
         for field_name in sorted_fields:
