@@ -125,6 +125,9 @@ def extract_with_llm(chunk, chunk_num, total_chunks):
     29. Terrorism - Look for: "APPLIES", "Excluded", "Included", "Can be added", any terrorism coverage status
     30. Protective Safeguards Requirements - Look for: any protective safeguards requirements listed
     31. Minimum Earned Premium (MEP) - Look for: "25%", "MEP: 25%", "35%", "MEP: 35%", any percentage
+    32. Property Premium - Look for: "$2,019.68", "$7,176.09", "TOTAL excl Terrorism", "TOTAL CHARGES W/O TRIA", "Property Premium", "Premium", "Commercial Property", any property premium amount (PRIORITY: Look for "TOTAL excl Terrorism" or "TOTAL CHARGES W/O TRIA" first)
+    33. Total Premium (With/Without Terrorism) - Look for: "TOTAL CHARGES W/O TRIA $7,176.09, TOTAL CHARGES WITH TRIA $7,441.13", "TOTAL excl Terrorism $2,019.68, TOTAL incl Terrorism $2,123.68", "Total Premium", "Annual Premium", any total premium amount (EXTRACT BOTH VALUES if available: "Without Terrorism: $X,XXX.XX, With Terrorism: $X,XXX.XX")
+    34. Policy Premium - Look for: "$2,500.00", "Policy Premium", "Base Premium", "Commercial Property" base amount, any policy premium amount
     
     EXTRACTION RULES:
     - Extract EXACTLY as written in the document
@@ -139,6 +142,9 @@ def extract_with_llm(chunk, chunk_num, total_chunks):
     - For Business Income: Look for amounts with time periods like "(1/6)", "(1/3)", "per month"
     - For Multi-line Values: Extract everything related to that field, preserve line breaks
     - For Complex Values: Extract the complete text block for that field
+    - For Property Premium: PRIORITY ORDER - 1) "TOTAL excl Terrorism" amount, 2) "TOTAL CHARGES W/O TRIA" amount, 3) "Property Premium" amount, 4) "Commercial Property" amount
+    - For Total Premium (With/Without Terrorism): ALWAYS EXTRACT BOTH VALUES if available - Format: "Without Terrorism: $X,XXX.XX, With Terrorism: $X,XXX.XX" or "W/O TRIA: $X,XXX.XX, WITH TRIA: $X,XXX.XX"
+    - For Policy Premium: Look for base policy amounts, "Policy Premium", or "Commercial Property" base amount
     - If field is not found, set to null
     - Do NOT hallucinate or make up values
     - Do NOT combine or modify existing values
@@ -159,7 +165,9 @@ def extract_with_llm(chunk, chunk_num, total_chunks):
         "Building": {{"value": "$500,000", "page": 5}},
         "Theft Sublimit": {{"value": "$10,000", "page": 6}},
         "Minimum Earned Premium (MEP)": {{"value": "25%", "page": 3}},
-        // ... other fields
+        "Property Premium": {{"value": "$2,019.68", "page": 3}},
+        "Total Premium (With/Without Terrorism)": {{"value": "Without Terrorism: $2,019.68, With Terrorism: $2,123.68", "page": 3}},
+        "Policy Premium": {{"value": "$1,742.00", "page": 3}}
     }}
     
     PAGE DETECTION RULES:
@@ -262,7 +270,7 @@ def merge_extraction_results(all_results):
         "Spoilage", "Theft", "Theft Sublimit", "Theft Deductible", "Windstorm or Hail",
         "Named Storm Deductible", "Wind and Hail and Named Storm exclusion",
         "All Other Perils Deductible", "Fire Station Alarm", "Burglar Alarm", "Terrorism",
-        "Protective Safeguards Requirements", "Minimum Earned Premium (MEP)"
+        "Protective Safeguards Requirements", "Minimum Earned Premium (MEP)", "Property Premium", "Total Premium (With/Without Terrorism)", "Policy Premium"
     ]
     
     merged_result = {}
@@ -423,6 +431,9 @@ def create_final_validated_fields(merged_result):
     # Manual corrections for known page locations
     page_corrections = {
         "Minimum Earned Premium (MEP)": "Page 3",
+        "Property Premium": "Page 3",
+        "Total Premium (With/Without Terrorism)": "Page 3",
+        "Policy Premium": "Page 3",
         "Terrorism": "Page 3"
     }
     

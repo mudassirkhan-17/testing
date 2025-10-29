@@ -99,6 +99,9 @@ def extract_with_llm(chunk, chunk_num, total_chunks):
     3. Payroll - Subject to Audit - Look for: "$36,000", "$45,000", "$30,000", any payroll amounts subject to audit
     4. Excluded Officer - Look for: "Parvez Jiwani", "Provide Details", "Details Required", "Officer decision on Inclusion / Exclusion required", any excluded officer information
     5. If Opting out from Workers Compensation Coverage - Look for: "By State Law in GA you are liable --- by not opting any injuries to the employees during work hours will not be covered", any opt-out information or liability statements
+    6. Workers Compensation Premium - Look for: "$1,500.00", "WC Premium", "Workers Comp Premium", "TOTAL excl Terrorism", "TOTAL CHARGES W/O TRIA", any workers compensation premium amount (PRIORITY: Look for "TOTAL excl Terrorism" or "TOTAL CHARGES W/O TRIA" first)
+    7. Total Premium - Look for: "$3,500.00", "TOTAL incl Terrorism", "TOTAL CHARGES WITH TRIA", "Total Premium", "Annual Premium", any total premium amount
+    8. Policy Premium - Look for: "$2,500.00", "Policy Premium", "Base Premium", "Workers Compensation" base amount, any policy premium amount
     
     EXTRACTION RULES:
     - Extract EXACTLY as written in the document
@@ -130,7 +133,10 @@ def extract_with_llm(chunk, chunk_num, total_chunks):
         "FEIN #": {{"value": "47-4792684", "page": 5}},
         "Payroll - Subject to Audit": {{"value": "$36,000", "page": 5}},
         "Excluded Officer": {{"value": "Parvez Jiwani", "page": 5}},
-        "If Opting out from Workers Compensation Coverage": {{"value": "By State Law in GA you are liable --- by not opting any injuries to the employees during work hours will not be covered", "page": 3}}
+        "If Opting out from Workers Compensation Coverage": {{"value": "By State Law in GA you are liable --- by not opting any injuries to the employees during work hours will not be covered", "page": 3}},
+        "Workers Compensation Premium": {{"value": "$1,500.00", "page": 3}},
+        "Total Premium": {{"value": "$3,500.00", "page": 3}},
+        "Policy Premium": {{"value": "$2,500.00", "page": 3}}
     }}
     
     PAGE DETECTION RULES:
@@ -229,7 +235,10 @@ def merge_extraction_results(all_results):
         "FEIN #",
         "Payroll - Subject to Audit",
         "Excluded Officer",
-        "If Opting out from Workers Compensation Coverage"
+        "If Opting out from Workers Compensation Coverage",
+        "Workers Compensation Premium",
+        "Total Premium",
+        "Policy Premium"
     ]
     
     merged_result = {}

@@ -100,6 +100,9 @@ def extract_with_llm(chunk, chunk_num, total_chunks):
     4. Requirements - Look for: "Active liquor license", "Training to staff serving alcohol", "Age verification", "minors are excluded", any requirements listed
     5. If any subjectivities in quote please add - Look for: "The establishment ceases the sale of alcohol daily by", "Approved by State / County / City", "approved represented time", any subjectivities or conditions
     6. Minimum Earned - Look for: "25%", "MEP: 25%", "35%", any minimum earned premium percentage
+    7. Liquor Premium - Look for: "$800.00", "Liquor Premium", "Bar Premium", "TOTAL excl Terrorism", "TOTAL CHARGES W/O TRIA", any liquor premium amount (PRIORITY: Look for "TOTAL excl Terrorism" or "TOTAL CHARGES W/O TRIA" first)
+    8. Total Premium (With/Without Terrorism) - Look for: "TOTAL CHARGES W/O TRIA $7,176.09, TOTAL CHARGES WITH TRIA $7,441.13", "TOTAL excl Terrorism $2,019.68, TOTAL incl Terrorism $2,123.68", "Total Premium", "Annual Premium", any total premium amount (EXTRACT BOTH VALUES if available: "Without Terrorism: $X,XXX.XX, With Terrorism: $X,XXX.XX")
+    9. Policy Premium - Look for: "$2,500.00", "Policy Premium", "Base Premium", "Liquor" base amount, any policy premium amount
     
     EXTRACTION RULES:
     - Extract EXACTLY as written in the document
@@ -133,7 +136,10 @@ def extract_with_llm(chunk, chunk_num, total_chunks):
         "Assault & Battery/Firearms/Active Assailant": {{"value": "Excluded", "page": 5}},
         "Requirements": {{"value": "Active liquor license, Training to staff serving alcohol, Age verification (minors are excluded)", "page": 5}},
         "If any subjectivities in quote please add": {{"value": "The establishment ceases the sale of alcohol daily by the represented time. Approved by State / County / City", "page": 3}},
-        "Minimum Earned": {{"value": "25%", "page": 3}}
+        "Minimum Earned": {{"value": "25%", "page": 3}},
+        "Liquor Premium": {{"value": "$800.00", "page": 3}},
+        "Total Premium (With/Without Terrorism)": {{"value": "Without Terrorism: $800.00, With Terrorism: $900.00", "page": 3}},
+        "Policy Premium": {{"value": "$2,500.00", "page": 3}}
     }}
     
     PAGE DETECTION RULES:
@@ -233,7 +239,10 @@ def merge_extraction_results(all_results):
         "Assault & Battery/Firearms/Active Assailant",
         "Requirements",
         "If any subjectivities in quote please add",
-        "Minimum Earned"
+        "Minimum Earned",
+        "Liquor Premium",
+        "Total Premium (With/Without Terrorism)",
+        "Policy Premium"
     ]
     
     merged_result = {}

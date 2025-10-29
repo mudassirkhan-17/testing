@@ -892,7 +892,8 @@ def push_master_to_sheets(carriers):
                 "Spoilage", "Theft", "Theft Sublimit", "Theft Deductible", "Windstorm or Hail",
                 "Named Storm Deductible", "Wind and Hail and Named Storm exclusion", 
                 "All Other Perils Deductible", "Fire Station Alarm", "Burglar Alarm", "Terrorism",
-                "Protective Safeguards Requirements", "Minimum Earned Premium (MEP)"
+                "Protective Safeguards Requirements", "Minimum Earned Premium (MEP)",
+                "Property Premium", "Total Premium (With/Without Terrorism)", "Policy Premium"
             ],
             "general_liability": [
                 "General Aggregate Limit", "Products-Completed Operations Aggregate Limit",
@@ -901,15 +902,18 @@ def push_master_to_sheets(carriers):
                 "Liquor Liability", "Host Liquor Liability", "Employment Practices Liability",
                 "Sexual Abuse and Molestation", "Professional Liability", "Cyber Liability",
                 "Directors and Officers Liability", "Employment Practices Liability", "Workers Compensation",
-                "Employers Liability", "Stop Gap Coverage", "Minimum Earned Premium (MEP)"
+                "Employers Liability", "Stop Gap Coverage", "Minimum Earned Premium (MEP)",
+                "General Liability Premium", "Total Premium (With/Without Terrorism)", "Policy Premium"
             ],
             "liquor": [
                 "Liquor Liability Limit", "Host Liquor Liability Limit", "Liquor Liability Deductible",
-                "Host Liquor Liability Deductible", "Assault and Battery Coverage", "Minimum Earned Premium (MEP)"
+                "Host Liquor Liability Deductible", "Assault and Battery Coverage", "Minimum Earned Premium (MEP)",
+                "Liquor Premium", "Total Premium (With/Without Terrorism)", "Policy Premium"
             ],
             "workers_compensation": [
                 "Limits", "FEIN #", "Payroll - Subject to Audit", 
-                "Excluded Officer", "If Opting out from Workers Compensation Coverage"
+                "Excluded Officer", "If Opting out from Workers Compensation Coverage",
+                "Workers Compensation Premium", "Total Premium (With/Without Terrorism)", "Policy Premium"
             ]
         }
         

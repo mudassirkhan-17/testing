@@ -4,6 +4,8 @@ config/credentials.json
 
 # Results folder
 results/
+pdf
+pdf2
 
 # Python cache
 __pycache__/

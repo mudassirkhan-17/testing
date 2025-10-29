@@ -113,6 +113,9 @@ def extract_with_llm(chunk, chunk_num, total_chunks):
     17. Personal and Advertising Injury Limit - Look for: "$1,000,000", "Excluded", any personal and advertising injury limit
     18. Products/Completed Operations Aggregate Limit - Look for: "Excluded", any products/completed operations aggregate limit
     19. Minimum Earned - Look for: "25%", "MEP: 25%", "35%", any minimum earned premium percentage
+    20. General Liability Premium - Look for: "$1,200.00", "GL Premium", "Liability Premium", "TOTAL excl Terrorism", "TOTAL CHARGES W/O TRIA", any GL premium amount (PRIORITY: Look for "TOTAL excl Terrorism" or "TOTAL CHARGES W/O TRIA" first)
+    21. Total Premium (With/Without Terrorism) - Look for: "TOTAL CHARGES W/O TRIA $7,176.09, TOTAL CHARGES WITH TRIA $7,441.13", "TOTAL excl Terrorism $2,019.68, TOTAL incl Terrorism $2,123.68", "Total Premium", "Annual Premium", any total premium amount (EXTRACT BOTH VALUES if available: "Without Terrorism: $X,XXX.XX, With Terrorism: $X,XXX.XX")
+    22. Policy Premium - Look for: "$2,500.00", "Policy Premium", "Base Premium", "General Liability" base amount, any policy premium amount
     
     EXTRACTION RULES:
     - Extract EXACTLY as written in the document
@@ -162,7 +165,10 @@ def extract_with_llm(chunk, chunk_num, total_chunks):
         "Terrorism": {{"value": "Excluded, Can be added with additional premium", "page": 3}},
         "Personal and Advertising Injury Limit": {{"value": "$1,000,000", "page": 5}},
         "Products/Completed Operations Aggregate Limit": {{"value": "Excluded", "page": 5}},
-        "Minimum Earned": {{"value": "25%", "page": 3}}
+        "Minimum Earned": {{"value": "25%", "page": 3}},
+        "General Liability Premium": {{"value": "$1,200.00", "page": 3}},
+        "Total Premium (With/Without Terrorism)": {{"value": "Without Terrorism: $1,200.00, With Terrorism: $1,300.00", "page": 3}},
+        "Policy Premium": {{"value": "$2,500.00", "page": 3}}
     }}
     
     PAGE DETECTION RULES:
@@ -275,7 +281,10 @@ def merge_extraction_results(all_results):
         "Terrorism",
         "Personal and Advertising Injury Limit",
         "Products/Completed Operations Aggregate Limit",
-        "Minimum Earned"
+        "Minimum Earned",
+        "General Liability Premium",
+        "Total Premium (With/Without Terrorism)",
+        "Policy Premium"
     ]
     
     merged_result = {}
